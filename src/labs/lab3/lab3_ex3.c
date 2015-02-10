@@ -9,14 +9,12 @@ void  printArray (int[], int);
 /* function main begins program execution */
 int main(void)
 {
-
    int num = SIZE;  /* sample array and size */
    int values[SIZE] = {10,9,8,7,6,5,4,3,2,1};
    /* parameters for array values */
    int max, min;
    float average;
 
-   /* INSERT CODE HERE TO PRINT ARRAY STATISTICS */
    average = getArrayStats(values, num, &max, &min);
    // print all the stats
    printf("Maximum value = %d\n", max);
@@ -59,7 +57,10 @@ void printArray(int values[], int num_elements)
 
 } /* end of printArray */
 
-float getArrayStats(int values[], int num_elements, int* max, int* min){
+float getArrayStats(int values[], 
+			int num_elements, 
+			int* max,
+			int* min){
    // set up the vars
    float average = 0;
    #include <limits.h> // include to get limits
@@ -76,5 +77,6 @@ float getArrayStats(int values[], int num_elements, int* max, int* min){
          *min = values[i];
       }
    }
-   return 1.5;
+   return average;
 }
+

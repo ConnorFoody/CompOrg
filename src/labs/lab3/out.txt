@@ -1,0 +1,109 @@
+Hello World!
+-------------------------------------------------------------
+dec hex  oct   char
+32  0x20 Oo40      
+33  0x21 Oo41     !
+34  0x22 Oo42     "
+35  0x23 Oo43     #
+36  0x24 Oo44     $
+37  0x25 Oo45     %
+38  0x26 Oo46     &
+39  0x27 Oo47     '
+40  0x28 Oo50     (
+41  0x29 Oo51     )
+42  0x2a Oo52     *
+43  0x2b Oo53     +
+44  0x2c Oo54     ,
+45  0x2d Oo55     -
+46  0x2e Oo56     .
+47  0x2f Oo57     /
+48  0x30 Oo60     0
+49  0x31 Oo61     1
+50  0x32 Oo62     2
+51  0x33 Oo63     3
+52  0x34 Oo64     4
+53  0x35 Oo65     5
+54  0x36 Oo66     6
+55  0x37 Oo67     7
+56  0x38 Oo70     8
+57  0x39 Oo71     9
+58  0x3a Oo72     :
+59  0x3b Oo73     ;
+60  0x3c Oo74     <
+61  0x3d Oo75     =
+62  0x3e Oo76     >
+63  0x3f Oo77     ?
+64  0x40 Oo100    @
+65  0x41 Oo101    A
+66  0x42 Oo102    B
+67  0x43 Oo103    C
+68  0x44 Oo104    D
+69  0x45 Oo105    E
+70  0x46 Oo106    F
+71  0x47 Oo107    G
+72  0x48 Oo110    H
+73  0x49 Oo111    I
+74  0x4a Oo112    J
+75  0x4b Oo113    K
+76  0x4c Oo114    L
+77  0x4d Oo115    M
+78  0x4e Oo116    N
+79  0x4f Oo117    O
+80  0x50 Oo120    P
+81  0x51 Oo121    Q
+82  0x52 Oo122    R
+83  0x53 Oo123    S
+84  0x54 Oo124    T
+85  0x55 Oo125    U
+86  0x56 Oo126    V
+87  0x57 Oo127    W
+88  0x58 Oo130    X
+89  0x59 Oo131    Y
+90  0x5a Oo132    Z
+91  0x5b Oo133    [
+92  0x5c Oo134    \
+93  0x5d Oo135    ]
+94  0x5e Oo136    ^
+95  0x5f Oo137    _
+96  0x60 Oo140    `
+97  0x61 Oo141    a
+98  0x62 Oo142    b
+99  0x63 Oo143    c
+100 0x64 Oo144    d
+101 0x65 Oo145    e
+102 0x66 Oo146    f
+103 0x67 Oo147    g
+104 0x68 Oo150    h
+105 0x69 Oo151    i
+106 0x6a Oo152    j
+107 0x6b Oo153    k
+108 0x6c Oo154    l
+109 0x6d Oo155    m
+110 0x6e Oo156    n
+111 0x6f Oo157    o
+112 0x70 Oo160    p
+113 0x71 Oo161    q
+114 0x72 Oo162    r
+115 0x73 Oo163    s
+116 0x74 Oo164    t
+117 0x75 Oo165    u
+118 0x76 Oo166    v
+119 0x77 Oo167    w
+120 0x78 Oo170    x
+121 0x79 Oo171    y
+122 0x7a Oo172    z
+123 0x7b Oo173    {
+124 0x7c Oo174    |
+125 0x7d Oo175    }
+126 0x7e Oo176    ~
+127 0x7f Oo177    
+-------------------------------------------------------------
+Maximum value = 10
+Minimum value = 1
+Average = 55.0
+
+Before the call to function decrement:
+  10   9   8   7   6   5   4   3   2   1
+
+After the call to function decrement:
+   9   8   7   6   5   4   3   2   1   0
