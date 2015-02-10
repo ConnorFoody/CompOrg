@@ -17,6 +17,11 @@ int main(void)
    float average;
 
    /* INSERT CODE HERE TO PRINT ARRAY STATISTICS */
+   average = getArrayStats(values, num, &max, &min);
+   // print all the stats
+   printf("Maximum value = %d\n", max);
+   printf("Minimum value = %d\n", min);
+   printf("Average = %1.1f\n", average);
 
    /* print the numbers in the array before call to decrement */
    printf("\nBefore the call to function decrement:\n");
@@ -54,3 +59,22 @@ void printArray(int values[], int num_elements)
 
 } /* end of printArray */
 
+float getArrayStats(int values[], int num_elements, int* max, int* min){
+   // set up the vars
+   float average = 0;
+   #include <limits.h> // include to get limits
+   *max = INT_MIN;
+   *min = INT_MAX;
+   int i = 0; 
+
+   for(i = 0; i < num_elements; i++){
+      average += values[i];
+      if(values[i] > *max){
+         *max = values[i];
+      }
+      if(values[i] < *min){
+         *min = values[i];
+      }
+   }
+   return 1.5;
+}
