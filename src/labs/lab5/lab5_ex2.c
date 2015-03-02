@@ -29,7 +29,7 @@ int isLittleEndian() {
       char charArr[sizeof(int)];
    } myunion;
    int count = 0; 
-   myunion.myint = 1;
+   myunion.myint = 19088743;
    printf("Integer number used in Union: ");
    printf("%i\n", myunion.myint);
   
@@ -37,6 +37,8 @@ int isLittleEndian() {
    for(count = 0; count < 4; count++){
  	printf("%d ", myunion.charArr[count]);
    }
+   printf("\n");
    /* Perform a test on the data and return 1 for little endian, 0 for big endian */
+   printf("value of int in hex is: %x\n", myunion.myint);
   return myunion.charArr[0] > myunion.charArr[1]; 
 }
