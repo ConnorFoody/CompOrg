@@ -104,20 +104,25 @@ int main(int argc, char** argv){
 
 int compress(char* raw, int size, FILE* outfp){
     int i; 
-    char to_write; 
+    unsigned char to_write; 
+    unsigned char holder;
     if(analyze(raw,size)){
 	printf("ERROR: invalid characters\n");
     }
-    for(i = 0; i < 8; i++){
+    for(i = 0; i < size; i++){
 	// fill int
 	if(i % 2 == 0){
-	    if(i != 0){
+	    if(i != 0 && i % 4 == 0){
 		// int is full, write it to the file
-		if(fprintf(outfp, "%x", to_write) < 0){
+		if(fprintf(outfp, "%c%c", holder, to_write) < 0){
 		    printf("ERROR: writing int to outfile\n");
 		    exit(1);
 		}
-		printf("wrote: %x\n", to_write);
+		printf("wrote: %x%x\n", to_write, holder);
+		holder = 0;
+	    }
+	    else {
+		holder = to_write;
 	    }
 	    to_write = 0;
 	}
@@ -141,9 +146,20 @@ int compress(char* raw, int size, FILE* outfp){
 	
 	//to_write = to_write << 1;
 	//to_write = 0x01 << 4;
-	to_write = to_write | 0x02;
+	//to_write = to_write | 0x02;
 	printf("char: %c\tto_write: %x\n", raw[i], to_write);	
 	// shift everything over
+    }
+    printf("to_write: %x\tholder: %x\n", to_write, holder);
+    if(size%4 == 0){
+	return 0;
+    }
+    if(size%4 <= 2){
+	printf("adding just to_write: %x\n", to_write);
+	fprintf(outfp, "%c", to_write);
+    }
+    else{
+	fprintf(outfp, "%c%c", to_write, holder);
     }
     return 0;
 }
