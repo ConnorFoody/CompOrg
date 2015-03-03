@@ -77,6 +77,9 @@ float getArrayStats(int values[],
          *min = values[i];
       }
    }
-   return average;
+   if(num_elements == 0){
+	num_elements = 1;
+   }
+   return average/num_elements;
 }
-
+L
