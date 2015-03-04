@@ -71,7 +71,7 @@ int main(int argc, char** argv){
     }
 
     // print array 
-    printf("%s\n", values);
+    printf("Raw array: %s\n", values);
 
     if(strcmp(argv[1],"-a") == 0){
 	if(analyze(values, num_values)){
@@ -84,6 +84,7 @@ int main(int argc, char** argv){
 
     }
     else if(strcmp(argv[1],"-d") == 0){
+	decompress(values, num_values, outfp);
 
     }
     else{
@@ -103,23 +104,68 @@ int main(int argc, char** argv){
 
     return 0;
 }
-
+char get_char_from_hex(unsigned char hex){
+    if(hex == 0x0) return '0';
+    if(hex == 0x01) return '1';
+    if(hex == 0x02) return '2';
+    if(hex == 0x03) return '3';
+    if(hex == 0x04) return '4';
+    if(hex == 0x05) return '5';
+    if(hex == 0x06) return '6';
+    if(hex == 0x07) return '7';
+    if(hex == 0x08) return '8';
+    if(hex == 0x09) return '9';
+    if(hex == 0x0a) return ',';
+    if(hex == 0x0b) return '-';
+    if(hex == 0x0c) return '.';
+    if(hex == 0x0d) return ' ';
+    if(hex == 0x0e) return '\n';
+    printf("ERROR: fallthrough on get_char_from_hex\n");
+    return 'E';
+}
 int decompress(char* raw, int size, FILE* outfp){
     int i; 
-    char* buffer;
+    int buff_mod;
+    unsigned char* buffer;
+    unsigned char to_write;
 
-    if((buffer = (char*) malloc(5 * sizeof(char))) == NULL){
+    if((buffer = (char*) malloc(4 * sizeof(char))) == NULL){
 	printf("ERROR: could not allocate memory\n");
 	exit(1);
     }
     
     for(i = 0; i < size; i++){
-	if(i%4 == 0){
+	if(i%2 == 0){
 	    if(fprintf(outfp, "%s", buffer) < 0){
-		printf("ERROR: could not write buffer to file\n"
+		printf("ERROR: could not write buffer to file\n");
+	    	exit(1);
+	    }
+	}	
+	to_write = raw[i];
+	printf("to_write hex: %x\tleft: %x\tright: %x\n", to_write, to_write >> 4, to_write - ((to_write >> 4) << 4));
+	if(i%2 == 1){
+	    buff_mod = 2;
+	}else{
+	    buff_mod = 0;
+	}
+
+	printf("hex: %x\tright: %c\t left: %c\n", to_write, get_char_from_hex(to_write >> 4), get_char_from_hex(to_write - ((to_write >> 4) << 4)));
+	buffer[buff_mod] = get_char_from_hex(to_write >> 4);
+	buffer[buff_mod + 1] = get_char_from_hex(to_write - ((to_write >> 4) << 4));
     }
-
-
+    if(size % 2 != 0){
+	if(fprintf(outfp, "%c%c", buffer[0], buffer[1]) < 0){
+	    printf("ERROR: could not write buffer to file\n");
+	    exit(1);
+	}
+    }
+    else{
+	if(fprintf(outfp, "%s", buffer) < 0){
+	    printf("ERROR: could not write buffer to file\n");
+	    exit(1);
+	}
+    }
+    //printf("buffer: %s\n", buffer);
 }
 
 
@@ -164,6 +210,7 @@ int compress(char* raw, int size, FILE* outfp){
 	else if(raw[i] == '.') to_write = to_write | 0x0C;
 	else if(raw[i] == ' ') to_write = to_write |0x0D;
 	else if(raw[i] == '\n') to_write = to_write |0x0E;
+	else{printf("ERROR: unknown character!\n");}
 	
 	//to_write = to_write << 1;
 	//to_write = 0x01 << 4;
