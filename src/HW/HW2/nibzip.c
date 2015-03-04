@@ -6,8 +6,6 @@ int analyze(char* raw, int size);
 int compress(char* raw, int size, FILE* outfp);
 int decompress(char* raw, int size, FILE* outfp);
 
-void showBits(unsigned int bits);
-
 int main(int argc, char** argv){
     // check that the args are OK
     
@@ -35,7 +33,6 @@ int main(int argc, char** argv){
     // read in file
     infile = argv[2];
     outfile = argv[3];
-    printf("ifile is: %s\tofile is: %s\n", infile, outfile);
 
     if((infp = fopen(infile, "r")) == NULL){
 	printf("ERROR: could not open input file for reading\n");
@@ -70,9 +67,6 @@ int main(int argc, char** argv){
 	fscanf(infp, "%c", &values[i]);
     }
 
-    // print array 
-    printf("Raw array: %s\n", values);
-
     if(strcmp(argv[1],"-a") == 0){
 	if(analyze(values, num_values)){
 	    printf("ERROR: invalid character\n");
@@ -81,11 +75,9 @@ int main(int argc, char** argv){
     }
     else if(strcmp(argv[1],"-c") == 0){
 	   compress(values, num_values, outfp);
-
     }
     else if(strcmp(argv[1],"-d") == 0){
 	decompress(values, num_values, outfp);
-
     }
     else{
 	usage();
@@ -104,7 +96,9 @@ int main(int argc, char** argv){
 
     return 0;
 }
+
 char get_char_from_hex(unsigned char hex){
+    // simple helper function to convert compressed hex value to char
     if(hex == 0x0) return '0';
     if(hex == 0x01) return '1';
     if(hex == 0x02) return '2';
@@ -124,10 +118,10 @@ char get_char_from_hex(unsigned char hex){
     return 'E';
 }
 int decompress(char* raw, int size, FILE* outfp){
-    int i; 
-    int buff_mod;
-    unsigned char* buffer;
-    unsigned char to_write;
+    int i; // counter 
+    int buff_mod; // helper for writing to buffer
+    unsigned char* buffer; // buffer for writing 4 chars at a time
+    unsigned char to_write; // holder for read 
 
     if((buffer = (char*) malloc(4 * sizeof(char))) == NULL){
 	printf("ERROR: could not allocate memory\n");
@@ -141,31 +135,36 @@ int decompress(char* raw, int size, FILE* outfp){
 	    	exit(1);
 	    }
 	}	
+	// put next char into holder
 	to_write = raw[i];
-	printf("to_write hex: %x\tleft: %x\tright: %x\n", to_write, to_write >> 4, to_write - ((to_write >> 4) << 4));
+
+	// keep track of which side of the buffer we are on (%2 because each char holds 2 chars)
 	if(i%2 == 1){
 	    buff_mod = 2;
 	}else{
 	    buff_mod = 0;
 	}
 
-	printf("hex: %x\tright: %c\t left: %c\n", to_write, get_char_from_hex(to_write >> 4), get_char_from_hex(to_write - ((to_write >> 4) << 4)));
+	// write char to buffer (shift to isolate right side of char first)
 	buffer[buff_mod] = get_char_from_hex(to_write >> 4);
+	// to_write shifts isolate value on the right of char (by moving left), move it back right then subtract it
 	buffer[buff_mod + 1] = get_char_from_hex(to_write - ((to_write >> 4) << 4));
     }
     if(size % 2 != 0){
+	// only print part of the buffer if buffer didn't get filled up all the way
 	if(fprintf(outfp, "%c%c", buffer[0], buffer[1]) < 0){
 	    printf("ERROR: could not write buffer to file\n");
 	    exit(1);
 	}
     }
     else{
+	// if we filled the buffer, print the whole thing
 	if(fprintf(outfp, "%s", buffer) < 0){
 	    printf("ERROR: could not write buffer to file\n");
 	    exit(1);
 	}
     }
-    //printf("buffer: %s\n", buffer);
+    return 0;
 }
 
 
@@ -212,11 +211,7 @@ int compress(char* raw, int size, FILE* outfp){
 	else if(raw[i] == '\n') to_write = to_write |0x0E;
 	else{printf("ERROR: unknown character!\n");}
 	
-	//to_write = to_write << 1;
-	//to_write = 0x01 << 4;
-	//to_write = to_write | 0x02;
 	printf("char: %c\tto_write: %x\n", raw[i], to_write);	
-	// shift everything over
     }
     printf("to_write: %x\tholder: %x\n", to_write, holder);
     if(size%4 == 0){
@@ -240,7 +235,6 @@ int analyze(char* raw, int size){
 	fprintf(stderr, "error allocating memory\n");
 	exit(1);
     }
-
 
     for(i = 0; i < size; i++){
     	if(raw[i] == '0') counts[0]++;
@@ -282,35 +276,4 @@ void usage(void){
     printf(" -c Compress input_file and write compressed data to output_file\n");
     printf(" -d Decompress the input_file and write the results to output_file\n");
     printf(" -h Display this message\n");
-}
-
-
-// delete this...
-void showBits( unsigned int num )
-{
-   /* shows the bits for each byte of */
-   /* an unsigned int value           */
-    
-   unsigned int count; /* counter variable */
-   unsigned int mask; /* mask for isolating bits */
-   mask = 1 << 31; /* prep mask for first bit */
-
-   printf("%10u, Bits = ",num);
-   for(count = 0; count < 32; count++)
-   {
-      if( num & mask )
-      {
-         putchar( '1' );
-      } 
-      else 
-      {
-         putchar( '0' );
-      } 
-    
-      /* put a space in for formatting */
-      if( (count+1) % 8 == 0 ) putchar( ' ' );
-      /* shift input num left by 1 */
-      num = num << 1;
-   }
-   putchar('\n');
 }
