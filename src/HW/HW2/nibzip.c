@@ -4,6 +4,8 @@
 void usage();
 int analyze(char* raw, int size);
 int compress(char* raw, int size, FILE* outfp);
+int decompress(char* raw, int size, FILE* outfp);
+
 void showBits(unsigned int bits);
 
 int main(int argc, char** argv){
@@ -78,7 +80,7 @@ int main(int argc, char** argv){
 	}
     }
     else if(strcmp(argv[1],"-c") == 0){
-	compress(values, num_values, outfp);
+	   compress(values, num_values, outfp);
 
     }
     else if(strcmp(argv[1],"-d") == 0){
@@ -101,6 +103,25 @@ int main(int argc, char** argv){
 
     return 0;
 }
+
+int decompress(char* raw, int size, FILE* outfp){
+    int i; 
+    char* buffer;
+
+    if((buffer = (char*) malloc(5 * sizeof(char))) == NULL){
+	printf("ERROR: could not allocate memory\n");
+	exit(1);
+    }
+    
+    for(i = 0; i < size; i++){
+	if(i%4 == 0){
+	    if(fprintf(outfp, "%s", buffer) < 0){
+		printf("ERROR: could not write buffer to file\n"
+    }
+
+
+}
+
 
 int compress(char* raw, int size, FILE* outfp){
     int i; 
