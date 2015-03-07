@@ -6,7 +6,7 @@
  *	INPUT: flag to describe operation code will perform,
  *		input file, output file
  *	Output: processed input file depending on flag, either
- 		compressed or decompressed
+ * 		compressed or decompressed
  *
  */
 
@@ -47,19 +47,19 @@ int main(int argc, char** argv){
 
     // open the input file for reading
     if((infp = fopen(infile, "r")) == NULL){
-	printf("ERROR: could not open input file for reading\n");
+	fprintf(stderr, "ERROR: could not open input file for reading\n");
 	exit(1);
     }
 
     // open the output file for reading
     if((outfp = fopen(outfile, "w")) == NULL){
-	printf("ERROR: could not open output file for writing\n");
+	fprintf(stderr, "ERROR: could not open output file for writing\n");
 	exit(1);
     }
 
     // get the size of array to alloc
     if(fseek(infp, 0, SEEK_END) != 0){
-	printf("ERROR: fseek had trouble\n");
+	fprintf(stderr, "ERROR: fseek had trouble\n");
     }
     num_values = ftell(infp); // number of characters in input file
     fseek(infp, 0L, SEEK_SET); // seek back to the begining of the input file
@@ -79,7 +79,7 @@ int main(int argc, char** argv){
     if(strcmp(argv[1],"-a") == 0){
 	// if -a (analyze) flag
 	if(analyze(values, num_values)){
-	    printf("ERROR: invalid character\n");
+	    fprintf(stderr, "ERROR: invalid character\n");
 	    exit(1);
 	}
     }
@@ -99,19 +99,21 @@ int main(int argc, char** argv){
 
     // close input file
     if(fclose(infp) == EOF){
-	printf("ERROR: closing input file\n");
+	fprintf(stderr, "ERROR: closing input file\n");
 	exit(1);
     }
 
     // close output file
     if(fclose(outfp) == EOF){
-	printf("ERROR: closing output file\n");
+	fprintf(stderr, "ERROR: closing output file\n");
 	exit(1);
     }
 
     return 0;
 }
 
+// helper function to get the char value of the hex input
+// @param hex input char containing hex corresponding to the char
 char get_char_from_hex(unsigned char hex){
     // simple helper function to convert compressed hex value to char
     if(hex == 0x0) return '0';
@@ -129,7 +131,7 @@ char get_char_from_hex(unsigned char hex){
     if(hex == 0x0c) return '.';
     if(hex == 0x0d) return ' ';
     if(hex == 0x0e) return '\n';
-    printf("ERROR: fallthrough on get_char_from_hex\n");
+    fprintf(stderr, "ERROR: fallthrough on get_char_from_hex\n");
     return '0';
 }
 
@@ -145,7 +147,7 @@ int decompress(char* raw, int size, FILE* outfp){
 
     // allocate buffer for reading characters from file
     if((buffer = (char*) malloc(4 * sizeof(char))) == NULL){
-	printf("ERROR: could not allocate memory\n");
+	fprintf(stderr, "ERROR: could not allocate memory\n");
 	exit(1);
     }
     
@@ -155,7 +157,7 @@ int decompress(char* raw, int size, FILE* outfp){
 	    // if two characters have been read into the
 	    // buffer, write the buffer to the output file
 	    if(fprintf(outfp, "%s", buffer) < 0){
-		printf("ERROR: could not write buffer to file\n");
+		fprintf(stderr, "ERROR: could not write buffer to file\n");
 	    	exit(1);
 	    }
 	}	
@@ -177,14 +179,14 @@ int decompress(char* raw, int size, FILE* outfp){
     if(size % 2 != 0){
 	// only print part of the buffer if buffer didn't get filled up all the way
 	if(fprintf(outfp, "%c%c", buffer[0], buffer[1]) < 0){
-	    printf("ERROR: could not write buffer to file\n");
+	    fprintf(stderr, "ERROR: could not write buffer to file\n");
 	    exit(1);
 	}
     }
     else{
 	// if we filled the buffer, print the whole thing
 	if(fprintf(outfp, "%s", buffer) < 0){
-	    printf("ERROR: could not write buffer to file\n");
+	    fprintf(stderr, "ERROR: could not write buffer to file\n");
 	    exit(1);
 	}
     }
@@ -201,7 +203,7 @@ int compress(char* raw, int size, FILE* outfp){
     unsigned char to_write; // character to be written to output file 
     unsigned char holder; // buffer to hold character to write
     if(analyze(raw,size) != 0){
-	printf("ERROR: invalid characters\n");
+	fprintf(stderr, "ERROR: invalid characters\n");
 	return 0;
     }
     for(i = 0; i < size; i++){
@@ -210,7 +212,7 @@ int compress(char* raw, int size, FILE* outfp){
 	    if(i != 0 && i % 4 == 0){
 		// int is full, write it to the file
 		if(fprintf(outfp, "%c%c", holder, to_write) < 0){
-		    printf("ERROR: writing int to outfile\n");
+		    fprintf(stderr, "ERROR: writing int to outfile\n");
 		    exit(1);
 		}
 		holder = 0;
