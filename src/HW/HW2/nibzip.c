@@ -145,8 +145,9 @@ int decompress(char* raw, int size, FILE* outfp){
     unsigned char* buffer; // buffer for writing 4 chars at a time
     unsigned char to_write; // holder for read 
 
-    int j;
-    unsigned char* analyze_buffer;
+    
+    int j; // counter for analyze_buffer
+    unsigned char* analyze_buffer; // holds characters to send over to analyze
 
     // allocate buffer for reading characters from file
     if((buffer = (char*) malloc(4 * sizeof(char))) == NULL){
@@ -154,6 +155,7 @@ int decompress(char* raw, int size, FILE* outfp){
 	exit(1);
     }
 
+    // allocate array to send over to analyze function
     if((analyze_buffer = (char *) malloc(size * 2 * sizeof(char))) == NULL){
 	fprintf(stderr, "ERROR: could not allocate memory\n");
 	exit(1);
@@ -184,6 +186,8 @@ int decompress(char* raw, int size, FILE* outfp){
 	buffer[buff_mod] = get_char_from_hex(to_write >> 4);
 	// to_write shifts isolate value on the right of char (by moving left), move it back right then subtract it
 	buffer[buff_mod + 1] = get_char_from_hex(to_write - ((to_write >> 4) << 4));
+
+	// write the files into the buffer to send over to the analyze function
 	analyze_buffer[j] = buffer[buff_mod];
 	analyze_buffer[j+1] = buffer[buff_mod + 1];
 	j += 2;
@@ -202,6 +206,8 @@ int decompress(char* raw, int size, FILE* outfp){
 	    exit(1);
 	}
     }
+
+    // check that all the characters were good
     if(analyze(analyze_buffer, j) != 0){
 	fprintf(stderr, "ERROR: failed to decompress, invalid character\n");
 	exit(1);
