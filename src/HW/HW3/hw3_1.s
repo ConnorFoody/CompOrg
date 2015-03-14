@@ -28,6 +28,7 @@ main:
 
 	jal find_num_zeros_right # find the number of zeros on the right side of the number
 	jal find_num_ones_left	# find the number of ones on the left of the number
+	jal find_highest_power	# find the highest power of 4 the number is divisible by
 	jal print		# jump over to print	
 	j exit			# exit
 
@@ -79,7 +80,66 @@ find_num_ones_left:
 
 	jr $31			# return back up 
 
-	# make room on stack for jump register and new number
+########################################################################
+########################################################################
+find_highest_power:
+	# find the highest power of 4 that evenly divides the input number
+	
+	lw $t0, 8 ($sp) 	# load original number off the stack
+	
+	li $t1, 0		# loop counter
+	li $t2, 1		# number to div by 
+	li $t3, 0		# holder for remainder
+	li $t4, 0		# loop end condition
+	li $t5, 4		# const for multiplying by
+
+	div $t0, $t2		# need to check before entering loop
+	mfhi $t3		# move remainder to t3
+
+highest_power_loop: bne $t4, $t3, end_highest_power_loop # loop until the remainder != 0 
+
+	bgt $t2, $t0, end_highest_power_loop # if the divisor is greater than original num, end loop
+	
+	move $a0, $t2		# debugging message
+	li $v0, 1
+	syscall
+
+	la $a0, newln_char 
+	li $v0, 4
+	syscall
+
+	addi $t1, $t1, 1 	# increase loop counter by 1
+
+	mult $t2, $t5		# multiply by 4
+	mflo $t2		# move number over to t2
+
+	div $t0, $t2		# divide to get remainder
+	mfhi $t3		# move remainder over to t3
+	
+	j highest_power_loop	# jump back up to the top of the loop
+
+end_highest_power_loop:
+	beq $t4, $t1, no_sub_highest_power	# loop will put us one over, so subtract if we were in it
+	sub $t1, $t1, 1		# move power down one to make everything happy (check for < 0?)	
+no_sub_highest_power:
+	addi $sp, $sp, -4	# make room on stack	
+	sw $t1, 0 ($sp)		# save highest power to the stack 
+	
+	la $a0, newln_char
+	li $v0, 4
+	syscall 
+
+	# print for testing
+	lw $a0, 0 ($sp)
+	li $v0, 1
+	syscall
+
+	# print newline string
+	la $a0, newln_char
+	li $v0, 4
+	syscall
+	jr $31			# return back up
+
 
 ########################################################################
 ########################################################################
@@ -93,21 +153,21 @@ find_num_ones:
 	li $t1, 1		# loop counter \ mask
 	li $t2, 65536 		# end condition for the loop
 
-ones_loop: beq $t1, $t2, end_loop
+ones_loop: beq $t1, $t2, end_ones_loop
 	
 	# check if slot is a one
 	and $t3, $a0, $t1	# bitwise and the number with the mask
 	
-	blt $t3, 1, prep_for_next_loop # result of bitwise and with mask is zero, prep for next loop
+	blt $t3, 1, prep_for_next_ones_loop # result of bitwise and with mask is zero, prep for next loop
 	# else, add to counter
 	addi $t0, $t0, 1	# add one to loop counter
 	
-prep_for_next_loop: 
+prep_for_next_ones_loop: 
 	# increase mask
 	sll $t1, $t1, 1		# increase mask
 	j ones_loop		# go back up loop
 
-end_loop: 
+end_ones_loop: 
 	# put the return value onto the stack
 	sw $t0, 4 ($sp)		# put num zeros onto the stack
 	
