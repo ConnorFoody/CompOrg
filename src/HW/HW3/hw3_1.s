@@ -1,6 +1,10 @@
 	.data 
 	.space 32
 prompt: .asciiz "Type in a positive integer: "
+num_zeros_msg: .asciiz "Number of 0's in the right half of the binary representation of the given integer = "
+num_ones_msg: .asciiz "Number of 1's in the left half of the binary representation of the given integer = "
+highest_power_msg: .asciiz "Largest power of 4 that evenly divides the given integer = "
+
 at_end:	.asciiz "done\n"
 newln_char: .asciiz "\n"
 	
@@ -29,6 +33,7 @@ main:
 	jal find_num_zeros_right # find the number of zeros on the right side of the number
 	jal find_num_ones_left	# find the number of ones on the left of the number
 	jal find_highest_power	# find the highest power of 4 the number is divisible by
+	jal find_smallest_digit	# finds the smallest digit in the number
 	jal print		# jump over to print	
 	j exit			# exit
 
@@ -100,13 +105,13 @@ highest_power_loop: bne $t4, $t3, end_highest_power_loop # loop until the remain
 
 	bgt $t2, $t0, end_highest_power_loop # if the divisor is greater than original num, end loop
 	
-	move $a0, $t2		# debugging message
-	li $v0, 1
-	syscall
+	#move $a0, $t2		# debugging message
+	#li $v0, 1
+	#syscall
 
-	la $a0, newln_char 
-	li $v0, 4
-	syscall
+	#la $a0, newln_char 
+	#li $v0, 4
+	#syscall
 
 	addi $t1, $t1, 1 	# increase loop counter by 1
 
@@ -125,20 +130,62 @@ no_sub_highest_power:
 	addi $sp, $sp, -4	# make room on stack	
 	sw $t1, 0 ($sp)		# save highest power to the stack 
 	
-	la $a0, newln_char
-	li $v0, 4
-	syscall 
+	#la $a0, newln_char
+	#li $v0, 4
+	#syscall 
 
 	# print for testing
-	lw $a0, 0 ($sp)
-	li $v0, 1
-	syscall
+	#lw $a0, 0 ($sp)
+	#li $v0, 1
+	#syscall
 
 	# print newline string
-	la $a0, newln_char
-	li $v0, 4
-	syscall
+	#la $a0, newln_char
+	#li $v0, 4
+	#syscall
 	jr $31			# return back up
+
+
+########################################################################
+########################################################################
+find_smallest_digit:
+	# finds the smallest digit in the decimal representation of the number
+	# divide number by 10 to move it down
+	# pull num % 10 to get the ones digit
+
+	lw $t0, 12 ($sp)	# load original number off the stack
+	li $t1, 10		# min for a digit, start at 10 b/c every digit is < 10
+	li $t2, 10		# const number to divide by 
+	li $t3, 0		# const loop end condition
+	li $t4, 0		# holder for remainder
+
+find_smallest_digit_loop: 
+	beq $t0, $t3, find_smallest_digit_end_loop # if the number has been divided down to zero, break the loop
+
+	# divide the number to move it down and get the remainder
+	div $t0, $t2		# divide to pull remainder and new value of t0
+	mflo $t0		# move quotient to t0
+	mfhi $t4		# move remainder to t4
+
+	#move $a0, $t0		# printing for debugging
+	#li $v0, 1	
+	#syscall
+
+	#la $a0, newln_char
+	#li $v0, 4
+	#syscall
+
+	bge $t4, $t1, find_smallest_digit_loop # if remainder > min go back up to the top of the loop
+	move $t1, $t4		# move new smallest digit into t1
+	
+	j find_smallest_digit_loop # go back up to start of the loop 
+
+find_smallest_digit_end_loop:
+	
+	addi $sp, $sp, -4	# make room on stack
+	sw $t1, 0 ($sp)		# put the min on the stack
+
+	jr $31			# return back up	
 
 
 ########################################################################
@@ -199,7 +246,8 @@ print:
 	
 	jr $31			# return back to main
 
-
+########################################################################
+########################################################################
 exit: 
 	# print finished message
 	la $a0, at_end
