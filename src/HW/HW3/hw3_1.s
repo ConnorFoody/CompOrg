@@ -4,6 +4,7 @@ prompt: .asciiz "Type in a positive integer: "
 num_zeros_msg: .asciiz "Number of 0's in the right half of the binary representation of the given integer = "
 num_ones_msg: .asciiz "Number of 1's in the left half of the binary representation of the given integer = "
 highest_power_msg: .asciiz "Largest power of 4 that evenly divides the given integer = "
+smallest_digit_msg: .asciiz "The value of the smallest digit in the decimal representation of the given integer = "
 
 at_end:	.asciiz "done\n"
 newln_char: .asciiz "\n"
@@ -233,15 +234,62 @@ end_ones_loop:
 ########################################################################
 ########################################################################
 print:
+	# stack layout: 
+	# 	0 --> smallest digit
+	#	4 --> highest power
+	# 	8 --> num 1's on right
+	# 	12 -- >num 0's on left
+
 	# print number of zeros on the right
-	lw $a0, 0($sp)		# load data off the stack
-	addi $sp, $sp, 4	# clean the stack back up
-	li $v0, 1		# code for printing integer
+	la $a0, num_zeros_msg	# load message for num zeros
+	li $v0, 4		# command for printing string
 	syscall
 
-	# print new line
-	la $a0, newln_char	# load newline character
-	li $v0, 4		# code to print string
+	lw $a0, 12($sp)		# load number of zeros off the stack
+	li $v0, 1		# code for printing integer
+	syscall
+	
+	la $a0, newln_char	# load new line character
+	li $v0, 4		# command for printing string
+	syscall
+
+	# print number of ones on the left
+	la $a0, num_ones_msg	# load message for num ones
+	li $v0, 4		# command for printing string
+	syscall
+
+	lw $a0, 8($sp)		# load number of ones off the stack
+	li $v0, 1		# code for printing integer
+	syscall
+	
+	la $a0, newln_char	# load new line character
+	li $v0, 4		# command for printing string
+	syscall
+
+	# print highest power
+	la $a0, highest_power_msg	# load message for highest power
+	li $v0, 4		# command for printing string
+	syscall
+
+	lw $a0, 4($sp)		# load highest power off the stack
+	li $v0, 1		# code for printing integer
+	syscall
+	
+	la $a0, newln_char	# load new line character
+	li $v0, 4		# command for printing string
+	syscall	
+
+	# print smallest digit
+	la $a0, smallest_digit_msg # load message for smallest digit
+	li $v0, 4		# command for printing string
+	syscall
+
+	lw $a0, 0($sp)		# load smallest digit off the stack
+	li $v0, 1		# code for printing integer
+	syscall
+	
+	la $a0, newln_char	# load new line character
+	li $v0, 4		# command for printing string
 	syscall
 	
 	jr $31			# return back to main
@@ -249,11 +297,6 @@ print:
 ########################################################################
 ########################################################################
 exit: 
-	# print finished message
-	la $a0, at_end
-	li $v0, 4
-	syscall
-	
 	# exit cleanly once done
 	li $v0, 10
 	syscall
