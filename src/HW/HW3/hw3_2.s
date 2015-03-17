@@ -10,6 +10,8 @@ debug_msg: .asciiz "debug\n"
 	# messages once done
 num_whitespaces_msg: .asciiz "# of whitespace characters: "
 num_words_msg: 	.asciiz "# of words: "
+pattern_found_msg: .asciiz "The user pattern was found within the input line.\n"
+pattern_not_found_msg: .asciiz "The user pattern was NOT found within the input line.\n"
 
 	# arrays for holding strings
 input_arr: .byte 0:100 	# input string is at most 100 chars
@@ -51,6 +53,8 @@ main:
 	jal str_len	# find length of pattern string
 	move $s1, $v0	# move the size of pattern string to s1
 
+	li $t8, 1	# store value of 1 for use in sub (no sub immediate)
+	sub $s1, $s1, $t8 # subtract one so we don't get end char
 
 	jal analyze_input # do the stuff on the input
 	jal print	# print the data we found
@@ -69,7 +73,7 @@ analyze_input:
 	li $s3, 0	# num words = 0
 	li $s4, 0	# pattern_found = false
 	
-	
+	# put return address on the stack	
 	addi $sp, $sp, -4 # make room for return addr on stack
 	sw $31, 0 ($sp)	# save return address on stack
 
@@ -81,6 +85,8 @@ analyze_input:
 	la $t3, pattern_arr # stack pointer for string
 
 	li $t4, 1	# previous was whitespace = true
+
+	li $t5, 0	# pattern is matching currently
 
 analyze_input_loop: 
 	bge $t0, $s0, analyze_input_loop_end # if the loop reaches the end of thet string, exit
@@ -95,28 +101,49 @@ analyze_input_loop:
 	li $t4, 1	# prev_was_whitespace = true
 	addi $s2, $s2, 1 # num_whitespaces ++
 
-	j prep_next_loop # go down the loop
+	#j prep_next_loop # go down the loop
+	j check_pattern_matches # go check if the pattern matches
 
 not_whitespace:
 
-	li $t8, 0	# store value of true so we can compare
+	li $t8, 0	# store value of false so we can compare
 	beq $t4, $t8, no_new_word # if prev_was_whitespace == false, no new word
 	addi $s3, $s3, 1 # increase the word count by one
 
-	# debugging msg 
-	lb $a0, 0 ($t1)
-	li $v0, 1
-	syscall
-	
-	la $a0, newln_char
-	li $v0, 4
-	syscall
+	# can fall down through here OK 
 
 no_new_word:
-	li $t4, 0 # prev_was_whitespace = false 
-	
-prep_next_loop:
+	li $t4, 0	# prev_was_whitespace = false 
 
+check_pattern_matches:	
+	# check to see if the pattern is in the input
+	# if the pattern counter == pattern length, then we have a word
+	li $t8, 1	# store the value of true for loop
+	beq $t8, $s4, prep_next_loop # if pattern already found in string, don't bother with this code
+	bne $t2, $s1, pattern_not_at_end # index of pattern != length of pattern then we havn't found the word yet
+	li $s4, 1	# if length of matching == length of pattern, match found
+	j prep_next_loop # skip down to the last bit
+		
+pattern_not_at_end:
+
+	lb $t8, 0 ($t1)	# load current input slot to t8
+	lb $t9, 0 ($t3)	# load current pattern slot to t9
+	bne $t8, $t9, pattern_not_match	# if input slot != pattern slot, pattern is broken
+	
+	li $t5, 1	# set was_matching to true
+	addi $t2, $t2, 1 # increase the pattern index
+	addi $t3, $t3, 1 # increase the pattern pointer
+
+	j prep_next_loop # jump down to prep_next_loop
+
+pattern_not_match: 
+	li $t8, 0	# store value of false so we can compare
+	beq $t5, $t8 prep_next_loop # if loop wasn't matching before, we don't need to reset it
+	li $t5, 0	# if wasn't matching, set was_matching to false
+	la $t3, pattern_arr # load start address of the pattern string back in
+	li $t2, 0	# set index we are looking at in pattern string back to zero
+
+prep_next_loop:
 	addi $t0, $t0, 1 # increase the index by one
 	addi $t1, $t1, 1 # increase the pointer by one
 	
@@ -201,6 +228,17 @@ print:
 
 	la $a0, newln_char # load message for newline
 	li $v0, 4	# command for printing a string
+	syscall
+
+	li $t8, 1	# store the value of true for use
+	beq $s4, $t8, print_pattern_found
+	la $a0, pattern_not_found_msg
+	j print_found_msg
+print_pattern_found:
+	la $a0, pattern_found_msg
+
+print_found_msg:
+	li $v0, 4
 	syscall
 
 	jr $31 		# return back up
