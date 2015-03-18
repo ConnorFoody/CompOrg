@@ -1,3 +1,28 @@
+
+##########################################################
+#	Homework 3, part 1
+#	Author: Connor Foody
+#	Lab section: 1
+#
+# 	input: a positive integer
+#	
+#	output: the number of 0's in the right half of the
+#		binary representation of the number, the 
+#		number of 1's in the left half of the biary
+#		representation of the number, the highest 
+#		power of 4 that evenly divides the input 
+#		number, and the value of the smallest digit
+#		in the decimal representation of the number
+#
+#	The program gets the input from the user, then 
+#	calculates all the output values one after another. 
+#	Finally, it outputs all the found values and prints
+#	them out. 
+#	
+#	assumptions: the input is valid
+###########################################################	
+
+
 	.data 
 	.space 32
 prompt: .asciiz "Type in a positive integer: "
@@ -106,14 +131,6 @@ highest_power_loop: bne $t4, $t3, end_highest_power_loop # loop until the remain
 
 	bgt $t2, $t0, end_highest_power_loop # if the divisor is greater than original num, end loop
 	
-	#move $a0, $t2		# debugging message
-	#li $v0, 1
-	#syscall
-
-	#la $a0, newln_char 
-	#li $v0, 4
-	#syscall
-
 	addi $t1, $t1, 1 	# increase loop counter by 1
 
 	mult $t2, $t5		# multiply by 4
@@ -125,25 +142,12 @@ highest_power_loop: bne $t4, $t3, end_highest_power_loop # loop until the remain
 	j highest_power_loop	# jump back up to the top of the loop
 
 end_highest_power_loop:
-	beq $t4, $t1, no_sub_highest_power	# loop will put us one over, so subtract if we were in it
+	beq $t4, $t1, no_sub_highest_power # loop will put us one over, so subtract if we were in it
 	sub $t1, $t1, 1		# move power down one to make everything happy (check for < 0?)	
 no_sub_highest_power:
 	addi $sp, $sp, -4	# make room on stack	
 	sw $t1, 0 ($sp)		# save highest power to the stack 
 	
-	#la $a0, newln_char
-	#li $v0, 4
-	#syscall 
-
-	# print for testing
-	#lw $a0, 0 ($sp)
-	#li $v0, 1
-	#syscall
-
-	# print newline string
-	#la $a0, newln_char
-	#li $v0, 4
-	#syscall
 	jr $31			# return back up
 
 
@@ -167,14 +171,6 @@ find_smallest_digit_loop:
 	div $t0, $t2		# divide to pull remainder and new value of t0
 	mflo $t0		# move quotient to t0
 	mfhi $t4		# move remainder to t4
-
-	#move $a0, $t0		# printing for debugging
-	#li $v0, 1	
-	#syscall
-
-	#la $a0, newln_char
-	#li $v0, 4
-	#syscall
 
 	bge $t4, $t1, find_smallest_digit_loop # if remainder > min go back up to the top of the loop
 	move $t1, $t4		# move new smallest digit into t1
@@ -218,18 +214,7 @@ prep_for_next_ones_loop:
 end_ones_loop: 
 	# put the return value onto the stack
 	sw $t0, 4 ($sp)		# put num zeros onto the stack
-	
-	# print for testing
-	#lw $a0, 4 ($sp)
-	#li $v0, 1
-	#syscall
-
-	# print newline string
-	#la $a0, newln_char
-	#li $v0, 4
-	#syscall
-	
-	jr $31
+	jr $31			# jump back up
  
 ########################################################################
 ########################################################################
