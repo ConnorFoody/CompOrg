@@ -1,4 +1,21 @@
-	
+
+###############################################################
+#	Homework 3 part 2
+#	author: Connor Foody
+#	lab section: 1
+# 	
+#	Inputs: a line of text and a pattern to search for
+#	Outputs: the number of whitespace and non-whitespace 
+#		 characters in the input line, the number of
+#		 words in the input line and whether or not
+#		 the given pattern was found
+#
+#	program reads the input and pattern lines, then 
+#	loops through the input line looking for whitespaces, 
+#	words and the pattern. Finally, it prints the info it
+#	found out. 
+#
+###############################################################	
 	.data
 	# message for printing
 prompt_text_msg: .asciiz "Enter an input line: "
@@ -13,6 +30,7 @@ num_non_whitespaces_msg: .asciiz "# of non-whitespace characters: "
 num_words_msg: 	.asciiz "# of words: "
 pattern_found_msg: .asciiz "The user pattern was found within the input line.\n"
 pattern_not_found_msg: .asciiz "The user pattern was NOT found within the input line.\n"
+only_whitespaces_msg: .asciiz "Line contains whitespace characters only!\n"
 
 	# arrays for holding strings
 input_arr: .byte 0:100 	# input string is at most 100 chars
@@ -188,8 +206,8 @@ str_len:
 	# a0 --> string
 	# a1 --> where to put length of string
 	
-	move $t0, $zero
-	j str_len_test
+	move $t0, $zero	# store the value of zero
+	j str_len_test 	# jump to loop test condition
 
 str_len_loop:
 	addi $a0, $a0, 1 # increment the string pointer
@@ -205,6 +223,10 @@ str_len_test:
 #####################################################################
 #####################################################################
 print:
+	# first check if the line is all whitespaces
+	sub $a0, $s0, $s2 # num non_whitespace chars = num chars - num whitespace chars
+	beq $a0, $zero, only_whitespaces # if num non-whitespace chars = 0, print message for only whitepsaces
+
 	# print the number of whitespaces found
 	la $a0, num_whitespaces_msg # load num whitespaces message
 	li $v0, 4	# command for printing a string
@@ -256,6 +278,14 @@ print_found_msg:
 	li $v0, 4 	# code for printing string
 	syscall		
 
+	j exit_print	# jump down to finish the program
+
+only_whitespaces: 
+	la $a0, only_whitespaces_msg # load only whitespaces message
+	li $v0, 4	# commadn for printing a string
+	syscall 
+
+exit_print:
 	jr $31 		# return back up
 #####################################################################
 #####################################################################
