@@ -9,6 +9,7 @@ debug_msg: .asciiz "debug\n"
 
 	# messages once done
 num_whitespaces_msg: .asciiz "# of whitespace characters: "
+num_non_whitespaces_msg: .asciiz "# of non-whitespace characters: "
 num_words_msg: 	.asciiz "# of words: "
 pattern_found_msg: .asciiz "The user pattern was found within the input line.\n"
 pattern_not_found_msg: .asciiz "The user pattern was NOT found within the input line.\n"
@@ -217,6 +218,19 @@ print:
 	li $v0, 4 	# command for printing string
 	syscall
 
+	# print the number of non-whitespace characters
+	la $a0, num_non_whitespaces_msg # load num non-whitespace 
+	li $v0, 4	# command for printing a string
+	syscall
+
+	sub $a0, $s0, $s2 # num non_whitespace chars = num chars - num whitespace chars
+	li $v0, 1	# command for printing integer
+	syscall
+
+	la $a0, newln_char # load message for newline
+	li $v0, 4	# command for printing string
+	syscall
+
 	# print the number of words found
 	la $a0, num_words_msg # load num words message
 	li $v0, 4	# command for printing a string
@@ -231,15 +245,16 @@ print:
 	syscall
 
 	li $t8, 1	# store the value of true for use
-	beq $s4, $t8, print_pattern_found
-	la $a0, pattern_not_found_msg
-	j print_found_msg
+	beq $s4, $t8, print_pattern_found # when the pattern was found skip down
+	la $a0, pattern_not_found_msg # if pattern not found, set the message to not found
+	j print_found_msg # skip down to print 
+
 print_pattern_found:
-	la $a0, pattern_found_msg
+	la $a0, pattern_found_msg # load pattern found message 
 
 print_found_msg:
-	li $v0, 4
-	syscall
+	li $v0, 4 	# code for printing string
+	syscall		
 
 	jr $31 		# return back up
 #####################################################################
