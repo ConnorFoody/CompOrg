@@ -12,7 +12,9 @@ EXE		= lab9
 # Compiler and loader commands and flags
 CC		= gcc
 CC_FLAGS	= -g -Wall -c
-LD_FLAGS	= -g -Wall
+LD_FLAGS	= -lm
+
+$FILENAME = a.out
 
 # The first, and hence default, target is the executable
 $(EXE): $(OBJS)
@@ -38,3 +40,11 @@ envinfo:
 	date
 	uname -a
 	pwd
+
+# run lab 9
+test:
+	@if [ -a lab9 ]; then ./lab9; else make lab9; ./lab9; fi;
+	
+
+#main.o: pi.h trig.h
+#trig.o: trig.h

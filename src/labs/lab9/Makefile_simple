@@ -1,0 +1,15 @@
+# Makefile for lab9
+
+CC = gcc
+
+# need -lm to make sure that math.h gets linked properly
+CFLAGS = -g -Wall -lm
+LDFLAGS = -g -Wall -lm
+
+lab9: main.o trig.o
+	${CC} ${CFLAGS} main.o trig.o -o $@ ${LDFLAGS}
+clean: 
+	rm lab9 *.o
+
+main.o: pi.h trig.h
+trig.o: trig.h
