@@ -24,7 +24,10 @@ struct identifier_reference{
 	char name[11];
 	int definition; 
 	struct line_value* head;
+	struct identifier_reference* next;
 };
+
+int analyze_file(FILE* infp, FILE* outfp);
 
 int main(int argc, char** argv){
 	printf("hello world\n");
@@ -59,6 +62,9 @@ int main(int argc, char** argv){
 		exit(1);
 	}
 
+	// analyze the file
+	analyze_file(infp, outfp);
+
 	// close input file
 	if(fclose(infp) == EOF){
 		fprintf(stderr, "ERROR: closing input file\n");
@@ -72,4 +78,36 @@ int main(int argc, char** argv){
 	}
 
 	return 0;	
+}
+
+
+int analyze_file(FILE* infp, FILE* outfp){
+	// reads the input file, puts line numbers on the front then moves on
+
+	int line_count = 1;		// track line numbers
+	char* in_line; 				// line buffer
+	
+	printf("going to alloc\n");	
+	if((in_line = (char*) malloc(80 * sizeof(char))) == NULL){ // alloc the line buffer
+		fprintf(stderr, "ERROR: could not alloc enough memory for in_line\n");
+		exit(1);
+	}
+
+	printf("about to enter the loop\n");
+	while(1){
+	
+		// read the next line
+		if(fgets(in_line, 80, infp) == NULL){
+			// at end of file
+			printf("reached the end of the file\n");
+			break;
+		}
+
+		// write the modified line to the output
+		if(fputs(in_line, outfp) == EOF){
+			fprintf(stderr, "ERROR: could not write line to the outfile\n");
+			exit(1);
+		}
+	}
+	return 0;
 }
