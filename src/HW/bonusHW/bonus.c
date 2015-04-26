@@ -172,6 +172,7 @@ void add_new_identifier(char* identifier, struct identifier_reference* identifie
 	line->next = NULL; 
 	line->value = 0;
 	tmp.head = line;
+	tmp.definition = 0;
 	
 	// put it in the array
 	identifiers[i] = tmp;
@@ -225,7 +226,7 @@ void analyze_line(char* line, struct identifier_reference* identifiers, int* num
 	}
 }
 
-void print_table(FILE* outfp, struct identifier_reference* identifiers);
+void print_table(FILE* outfp, struct identifier_reference* identifiers, int num_identifiers);
 
 int analyze_file(FILE* infp, FILE* outfp){
 	// reads the input file, puts line numbers on the front then moves on
@@ -280,18 +281,41 @@ int analyze_file(FILE* infp, FILE* outfp){
 	}
 
 	// write table
-	print_table(outfp, identifiers);
+	print_table(outfp, identifiers, num_identifiers);
 	return 0;
 }
 
-void print_table(FILE* outfp, struct identifier_reference* identifiers){
+void print_table(FILE* outfp, struct identifier_reference* identifiers, int num_identifiers){
 	// prints out a table with the identifiers on it at the end
 	char* to_print;
+	int i = 0; 
+	
+	// alloc space for to_print, 50 should be more than enough
+	if((to_print = (char*) malloc(50*sizeof(char))) == NULL){
+		fprintf(stderr, "ERROR: could not alloc memory for to_print\n");
+		exit(1);
+	}
 
 	// print out the table header
-	to_print = "\nIdentifier Reference Table\n\n\tIdentifier\tDefinition-Line\tUse Line(s)\n";
+	sprintf(to_print, "\nIdentifier Reference Table\n\n\tIdentifier\tDefinition-Line\t\tUse Line(s)\n");
+	printf("going to print\n");
 	if(fputs(to_print, outfp) == EOF){
 		fprintf(stderr, "ERROR: could not write lein to the outfile\n");
 		exit(1);
 	}
+	while(i < num_identifiers){
+		printf("in the while loop\n");
+		sprintf(to_print, "\t%-12s%-15d\t", identifiers[i].name, identifiers[i].definition);
+		//struct line_value* tmp = identifiers[i].head->next;	
+		
+
+		// print to the file
+		sprintf(to_print + strlen(to_print), "\n");
+		if(fputs(to_print, outfp) == EOF){
+			fprintf(stderr, "ERROR: could not write line to the outfile\n");
+			exit(1);
+		}
+		i++;
+	}
+
 }

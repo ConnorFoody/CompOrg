@@ -7,6 +7,9 @@
 8	syscall
 9	li $v0, 10
 10	syscall
+
 Identifier Reference Table
 
-	Identifier	Definition-Line	Use Line(s)
+	Identifier	Definition-Line		Use Line(s)
+	msg         0              	
+	main        0              	
