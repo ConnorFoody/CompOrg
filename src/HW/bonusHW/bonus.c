@@ -114,14 +114,14 @@ void check_identifier(char* token, struct identifier_reference* identifiers, int
 				exit(1);
 			}
 			struct line_value* head = identifiers[i].head;
-			tmp.next = NULL;
-			tmp.value = 0;
+			tmp->next = NULL;
+			tmp->value = 0;
 
 			// add the new line value onto the end of the list
-			while(head.next != NULL){
-				head = head.next;
+			while(head->next != NULL){
+				head = head->next;
 			}
-			head.next = tmp;
+			head->next = tmp;
 
 			// get out
 			return; 
@@ -132,7 +132,6 @@ void check_identifier(char* token, struct identifier_reference* identifiers, int
 }
 
 void add_new_identifier(char* identifier, struct identifier_reference* identifiers, int* num_identifiers){
-	
 	int i = 0; 
 	
 	if(strlen(identifier) > 11){
@@ -140,7 +139,10 @@ void add_new_identifier(char* identifier, struct identifier_reference* identifie
 		return;
 	}
 
-	// fix the token 
+	// token has ':' at end, replace with null character 
+	if(identifier[strlen(identifier) - 1] != ':'){
+		printf("\tWARNING: expected token to end in ':'\n");
+	}
 	identifier[strlen(identifier) - 1] = '\0';
 	
 	while(i != *num_identifiers){
@@ -160,6 +162,18 @@ void add_new_identifier(char* identifier, struct identifier_reference* identifie
 		exit(1);
 	}
 	strcpy(tmp.name, identifier); // need to check for error?
+
+	// add the line number
+	struct line_value* line; 
+	if((line = (struct line_value*) malloc(sizeof(struct line_value))) == NULL){
+		fprintf(stderr, "ERROR: could not alloc memory to add new line struct\n");
+		exit(1);
+	}
+	line->next = NULL; 
+	line->value = 0;
+	tmp.head = line;
+	
+	// put it in the array
 	identifiers[i] = tmp;
 
 	// update count
@@ -170,7 +184,6 @@ void add_new_identifier(char* identifier, struct identifier_reference* identifie
 
 void analyze_line(char* line, struct identifier_reference* identifiers, int* num_identifiers){
 	// analyzes the line
-	//printf("analyzing line \" %s \" \n", line);
 		
 	// deliminate by commas and spaces	
 	char* tkn = strtok(line, ",\n \t");
@@ -210,20 +223,27 @@ void analyze_line(char* line, struct identifier_reference* identifiers, int* num
 
 		tkn = strtok(NULL, ", \t\n");
 	}
-
 }
+
+void print_table(FILE* outfp, struct identifier_reference* identifiers);
 
 int analyze_file(FILE* infp, FILE* outfp){
 	// reads the input file, puts line numbers on the front then moves on
 
 	int line_count = 1;		// track line numbers
 	char* in_line; 				// line buffer
+	char* line_cpy; 			// so that the line can be changed
+
 	struct identifier_reference* identifiers; // array of used identifiers
 	int num_identifiers = 0; // keeps track of how many identifiers we have found
 
 	// alloc with size 85 to fit line numbers
 	if((in_line = (char*) malloc(85 * sizeof(char))) == NULL){ // alloc the line buffer
 		fprintf(stderr, "ERROR: could not alloc enough memory for in_line\n");
+		exit(1);
+	}
+	if((line_cpy = (char*) malloc(85 * sizeof(char))) == NULL){ // alloc the line buffer
+		fprintf(stderr, "ERROR: could not alloc enough memory for line cpy\n");
 		exit(1);
 	}
 
@@ -242,10 +262,13 @@ int analyze_file(FILE* infp, FILE* outfp){
 			printf("reached the end of the file\n");
 			break;
 		}
+	
+		// copy the line so analyze_line and it's subfunctions can change it
+		strcpy(line_cpy, in_line);		
 
 		// analyze the line 
-		analyze_line(in_line, identifiers, &num_identifiers);
-		
+		analyze_line(line_cpy, identifiers, &num_identifiers);
+	
 		// add the line numbers
 		in_line = add_line_number(in_line, line_count);	
 		// write the modified line to the output
@@ -255,5 +278,20 @@ int analyze_file(FILE* infp, FILE* outfp){
 		}
 		line_count++;
 	}
+
+	// write table
+	print_table(outfp, identifiers);
 	return 0;
+}
+
+void print_table(FILE* outfp, struct identifier_reference* identifiers){
+	// prints out a table with the identifiers on it at the end
+	char* to_print;
+
+	// print out the table header
+	to_print = "\nIdentifier Reference Table\n\n\tIdentifier\tDefinition-Line\tUse Line(s)\n";
+	if(fputs(to_print, outfp) == EOF){
+		fprintf(stderr, "ERROR: could not write lein to the outfile\n");
+		exit(1);
+	}
 }
