@@ -14,6 +14,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 struct line_value{
 	int value;
@@ -80,6 +81,22 @@ int main(int argc, char** argv){
 	return 0;	
 }
 
+char* add_line_number(char* line, int number){
+	char* to_add; 				// line to add	
+
+	// alloc the memory 
+	if((to_add = (char*) malloc(4 * sizeof(char))) == NULL){
+		fprintf(stderr, "ERROR: could not alloc enough memory for line string\n");
+		exit(1);
+	}
+
+	// print the string and concat
+	sprintf(to_add, "%d\t", number);
+	strcat(to_add, line);
+
+	// return the new line
+	return to_add;
+}
 
 int analyze_file(FILE* infp, FILE* outfp){
 	// reads the input file, puts line numbers on the front then moves on
@@ -87,8 +104,8 @@ int analyze_file(FILE* infp, FILE* outfp){
 	int line_count = 1;		// track line numbers
 	char* in_line; 				// line buffer
 	
-	printf("going to alloc\n");	
-	if((in_line = (char*) malloc(80 * sizeof(char))) == NULL){ // alloc the line buffer
+	// alloc with size 85 to fit line numbers
+	if((in_line = (char*) malloc(85 * sizeof(char))) == NULL){ // alloc the line buffer
 		fprintf(stderr, "ERROR: could not alloc enough memory for in_line\n");
 		exit(1);
 	}
@@ -102,12 +119,15 @@ int analyze_file(FILE* infp, FILE* outfp){
 			printf("reached the end of the file\n");
 			break;
 		}
-
+		
+		// add the line numbers
+		in_line = add_line_number(in_line, line_count);	
 		// write the modified line to the output
 		if(fputs(in_line, outfp) == EOF){
 			fprintf(stderr, "ERROR: could not write line to the outfile\n");
 			exit(1);
 		}
+		line_count++;
 	}
 	return 0;
 }
