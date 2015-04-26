@@ -22,10 +22,9 @@ struct line_value{
 };
 
 struct identifier_reference{
-	char name[11];
+	char* name;
 	int definition; 
 	struct line_value* head;
-	struct identifier_reference* next;
 };
 
 int analyze_file(FILE* infp, FILE* outfp);
@@ -98,15 +97,139 @@ char* add_line_number(char* line, int number){
 	return to_add;
 }
 
+void check_identifier(char* token, struct identifier_reference* identifiers, int* num_identifiers){
+	// checks if a token is an identifier
+	int i = 0; 
+
+	printf("\t\tchecking if \"%s\" is an identifier\n", token);
+	while(i != *num_identifiers){
+		if(strcmp(identifiers[i].name, token) == 0){
+			// found an identifier already in the list, add it
+			printf("\t\ttoken \"%s\" is an identifier, updating table\n", token);
+
+			// alloc new line_value
+			struct line_value* tmp;
+			if((tmp = (struct line_value*) malloc(sizeof(struct line_value))) == NULL){
+				fprintf(stderr, "ERROR: could not alloc mem for line_value\n");
+				exit(1);
+			}
+			struct line_value* head = identifiers[i].head;
+			tmp.next = NULL;
+			tmp.value = 0;
+
+			// add the new line value onto the end of the list
+			while(head.next != NULL){
+				head = head.next;
+			}
+			head.next = tmp;
+
+			// get out
+			return; 
+		}
+		i++;
+	}
+	
+}
+
+void add_new_identifier(char* identifier, struct identifier_reference* identifiers, int* num_identifiers){
+	
+	int i = 0; 
+	
+	if(strlen(identifier) > 11){
+		printf("WARNING: tried to add an identifier that was too long\n");	
+		return;
+	}
+
+	// fix the token 
+	identifier[strlen(identifier) - 1] = '\0';
+	
+	while(i != *num_identifiers){
+		if(strcmp(identifiers[i].name, identifier) == 0){
+			// found an identifier already in the list, add it
+			printf("\t\tWARNING: identifier found in table\n");
+			return; 
+		}
+		i++;
+	}
+
+	printf("\t\tidentifier is not already in the list, adding it in: %s\n", identifier);
+	// build and add new identifier
+	struct identifier_reference tmp; 
+	if((tmp.name = (char*) malloc(11 * sizeof(char))) == NULL){ // give the right ammount of space
+		fprintf(stderr, "ERROR: could not alloc memory to add a new identifier\n");
+		exit(1);
+	}
+	strcpy(tmp.name, identifier); // need to check for error?
+	identifiers[i] = tmp;
+
+	// update count
+	(*num_identifiers)++;
+
+	return;
+}
+
+void analyze_line(char* line, struct identifier_reference* identifiers, int* num_identifiers){
+	// analyzes the line
+	//printf("analyzing line \" %s \" \n", line);
+		
+	// deliminate by commas and spaces	
+	char* tkn = strtok(line, ",\n \t");
+
+	// check if the line is empty or is a comment line
+	if(tkn == NULL || tkn[0] == '\n' || tkn[0] == '#'){
+		printf("\tline is empty or comment line\n");
+		return;
+	}
+
+	// loop through all the tokens
+	while(tkn != NULL){
+
+		// if line has no more useful info, return	
+		if(tkn[0] == '#' || tkn[0] == '\n' || tkn[0] == '.') { return; }
+	
+		// if register token, skip it
+		if(tkn[0] == '$'){
+			tkn = strtok(NULL, ", ");
+			continue;
+		}
+
+		printf("\tlooking at token: %s\n", tkn);	
+		if(tkn[strlen(tkn) - 1] == '\n'){
+			printf("\tcaught new line, going to fix\n");
+			tkn[strlen(tkn) - 1] = '\0';
+		}
+
+		if(tkn[strlen(tkn) - 1] == ':'){
+			printf("\t\tfound an identifier definition: %s\n", tkn);
+			add_new_identifier(tkn, identifiers, num_identifiers);
+		}	
+		else{
+			check_identifier(tkn, identifiers, num_identifiers);
+		}
+		//printf("\tlast char is: |%c|\n", tkn[strlen(tkn) -1 ]);
+
+		tkn = strtok(NULL, ", \t\n");
+	}
+
+}
+
 int analyze_file(FILE* infp, FILE* outfp){
 	// reads the input file, puts line numbers on the front then moves on
 
 	int line_count = 1;		// track line numbers
 	char* in_line; 				// line buffer
-	
+	struct identifier_reference* identifiers; // array of used identifiers
+	int num_identifiers = 0; // keeps track of how many identifiers we have found
+
 	// alloc with size 85 to fit line numbers
 	if((in_line = (char*) malloc(85 * sizeof(char))) == NULL){ // alloc the line buffer
 		fprintf(stderr, "ERROR: could not alloc enough memory for in_line\n");
+		exit(1);
+	}
+
+	// alloc identifier array
+	if((identifiers = (struct identifier_reference*) malloc(100 * sizeof(struct identifier_reference))) == NULL){
+		fprintf(stderr, "ERROR: could not alloc enough memory for identifiers array\n");
 		exit(1);
 	}
 
@@ -119,6 +242,9 @@ int analyze_file(FILE* infp, FILE* outfp){
 			printf("reached the end of the file\n");
 			break;
 		}
+
+		// analyze the line 
+		analyze_line(in_line, identifiers, &num_identifiers);
 		
 		// add the line numbers
 		in_line = add_line_number(in_line, line_count);	

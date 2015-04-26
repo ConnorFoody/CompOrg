@@ -1,9 +1,1 @@
-1		.data
-1	msg:	.asciiz "Hello Worl!1		.text
-1		.globl main
-1	main:
-1	li $v0, 4
-1	la $a0, msg
-1	syscall
-1	li $v0, 10
-1	syscall
+1		.data2	msg3		.text4		.globl5	main6	li7	la8	syscall9	li10	syscall
