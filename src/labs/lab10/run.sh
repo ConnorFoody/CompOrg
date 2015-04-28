@@ -1,0 +1,1 @@
+gcc -O3 -o ex2 lab10_ex2.c
