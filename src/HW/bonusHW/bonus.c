@@ -1,0 +1,321 @@
+/**
+ * author: Connor Foody 
+ * 
+ * Bonus homework assignment for CompOrg
+ * 
+ * Input is an s file, output is a lst file
+ *
+ * Output is same as input, but with line nums appended
+ * Output table of identifiers with definition line, and
+ * use lines
+ */
+
+// struct to hold identifier reference table data
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+struct line_value{
+	int value;
+	struct line_value* next;
+};
+
+struct identifier_reference{
+	char* name;
+	int definition; 
+	struct line_value* head;
+};
+
+int analyze_file(FILE* infp, FILE* outfp);
+
+int main(int argc, char** argv){
+	printf("hello world\n");
+
+
+	char* infile; // store the name of the input file
+	char* outfile; // store the name of the ouput file
+
+	FILE* infp; // file pointer for the input file
+	FILE* outfp; // file pointer for the output file
+
+	// check command line args
+	if(argc != 3){
+		// TODO: make a proper usage function
+		printf("ERROR: incorrect number of inputs, expected 3 and got %d\n", argc);
+		return 0;
+	}
+
+	// read in file
+	infile = argv[1];
+	outfile = argv[2];
+
+	// open the input file for reading
+	if((infp = fopen(infile, "r")) == NULL){
+		fprintf(stderr, "ERROR: could not open input file for reading\n");
+		exit(1);
+	}
+
+	// open the output file for reading
+	if((outfp = fopen(outfile, "w")) == NULL){
+		fprintf(stderr, "ERROR: could not open output file for writing\n");
+		exit(1);
+	}
+
+	// analyze the file
+	analyze_file(infp, outfp);
+
+	// close input file
+	if(fclose(infp) == EOF){
+		fprintf(stderr, "ERROR: closing input file\n");
+		exit(1);
+	}
+
+	// close output file
+	if(fclose(outfp) == EOF){
+		fprintf(stderr, "ERROR: closing output file\n");
+		exit(1);
+	}
+
+	return 0;	
+}
+
+char* add_line_number(char* line, int number){
+	char* to_add; 				// line to add	
+
+	// alloc the memory 
+	if((to_add = (char*) malloc(4 * sizeof(char))) == NULL){
+		fprintf(stderr, "ERROR: could not alloc enough memory for line string\n");
+		exit(1);
+	}
+
+	// print the string and concat
+	sprintf(to_add, "%d\t", number);
+	strcat(to_add, line);
+
+	// return the new line
+	return to_add;
+}
+
+void check_identifier(char* token, struct identifier_reference* identifiers, int* num_identifiers){
+	// checks if a token is an identifier
+	int i = 0; 
+
+	printf("\t\tchecking if \"%s\" is an identifier\n", token);
+	while(i != *num_identifiers){
+		if(strcmp(identifiers[i].name, token) == 0){
+			// found an identifier already in the list, add it
+			printf("\t\ttoken \"%s\" is an identifier, updating table\n", token);
+
+			// alloc new line_value
+			struct line_value* tmp;
+			if((tmp = (struct line_value*) malloc(sizeof(struct line_value))) == NULL){
+				fprintf(stderr, "ERROR: could not alloc mem for line_value\n");
+				exit(1);
+			}
+			struct line_value* head = identifiers[i].head;
+			tmp->next = NULL;
+			tmp->value = 0;
+
+			// add the new line value onto the end of the list
+			while(head->next != NULL){
+				head = head->next;
+			}
+			head->next = tmp;
+
+			// get out
+			return; 
+		}
+		i++;
+	}
+	
+}
+
+void add_new_identifier(char* identifier, struct identifier_reference* identifiers, int* num_identifiers){
+	int i = 0; 
+	
+	if(strlen(identifier) > 11){
+		printf("WARNING: tried to add an identifier that was too long\n");	
+		return;
+	}
+
+	// token has ':' at end, replace with null character 
+	if(identifier[strlen(identifier) - 1] != ':'){
+		printf("\tWARNING: expected token to end in ':'\n");
+	}
+	identifier[strlen(identifier) - 1] = '\0';
+	
+	while(i != *num_identifiers){
+		if(strcmp(identifiers[i].name, identifier) == 0){
+			// found an identifier already in the list, add it
+			printf("\t\tWARNING: identifier found in table\n");
+			return; 
+		}
+		i++;
+	}
+
+	printf("\t\tidentifier is not already in the list, adding it in: %s\n", identifier);
+	// build and add new identifier
+	struct identifier_reference tmp; 
+	if((tmp.name = (char*) malloc(11 * sizeof(char))) == NULL){ // give the right ammount of space
+		fprintf(stderr, "ERROR: could not alloc memory to add a new identifier\n");
+		exit(1);
+	}
+	strcpy(tmp.name, identifier); // need to check for error?
+
+	// add the line number
+	struct line_value* line; 
+	if((line = (struct line_value*) malloc(sizeof(struct line_value))) == NULL){
+		fprintf(stderr, "ERROR: could not alloc memory to add new line struct\n");
+		exit(1);
+	}
+	line->next = NULL; 
+	line->value = 0;
+	tmp.head = line;
+	tmp.definition = 0;
+	
+	// put it in the array
+	identifiers[i] = tmp;
+
+	// update count
+	(*num_identifiers)++;
+
+	return;
+}
+
+void analyze_line(char* line, struct identifier_reference* identifiers, int* num_identifiers){
+	// analyzes the line
+		
+	// deliminate by commas and spaces	
+	char* tkn = strtok(line, ",\n \t");
+
+	// check if the line is empty or is a comment line
+	if(tkn == NULL || tkn[0] == '\n' || tkn[0] == '#'){
+		printf("\tline is empty or comment line\n");
+		return;
+	}
+
+	// loop through all the tokens
+	while(tkn != NULL){
+
+		// if line has no more useful info, return	
+		if(tkn[0] == '#' || tkn[0] == '\n' || tkn[0] == '.') { return; }
+	
+		// if register token, skip it
+		if(tkn[0] == '$'){
+			tkn = strtok(NULL, ", ");
+			continue;
+		}
+
+		printf("\tlooking at token: %s\n", tkn);	
+		if(tkn[strlen(tkn) - 1] == '\n'){
+			printf("\tcaught new line, going to fix\n");
+			tkn[strlen(tkn) - 1] = '\0';
+		}
+
+		if(tkn[strlen(tkn) - 1] == ':'){
+			printf("\t\tfound an identifier definition: %s\n", tkn);
+			add_new_identifier(tkn, identifiers, num_identifiers);
+		}	
+		else{
+			check_identifier(tkn, identifiers, num_identifiers);
+		}
+		//printf("\tlast char is: |%c|\n", tkn[strlen(tkn) -1 ]);
+
+		tkn = strtok(NULL, ", \t\n");
+	}
+}
+
+void print_table(FILE* outfp, struct identifier_reference* identifiers, int num_identifiers);
+
+int analyze_file(FILE* infp, FILE* outfp){
+	// reads the input file, puts line numbers on the front then moves on
+
+	int line_count = 1;		// track line numbers
+	char* in_line; 				// line buffer
+	char* line_cpy; 			// so that the line can be changed
+
+	struct identifier_reference* identifiers; // array of used identifiers
+	int num_identifiers = 0; // keeps track of how many identifiers we have found
+
+	// alloc with size 85 to fit line numbers
+	if((in_line = (char*) malloc(85 * sizeof(char))) == NULL){ // alloc the line buffer
+		fprintf(stderr, "ERROR: could not alloc enough memory for in_line\n");
+		exit(1);
+	}
+	if((line_cpy = (char*) malloc(85 * sizeof(char))) == NULL){ // alloc the line buffer
+		fprintf(stderr, "ERROR: could not alloc enough memory for line cpy\n");
+		exit(1);
+	}
+
+	// alloc identifier array
+	if((identifiers = (struct identifier_reference*) malloc(100 * sizeof(struct identifier_reference))) == NULL){
+		fprintf(stderr, "ERROR: could not alloc enough memory for identifiers array\n");
+		exit(1);
+	}
+
+	printf("about to enter the loop\n");
+	while(1){
+	
+		// read the next line
+		if(fgets(in_line, 80, infp) == NULL){
+			// at end of file
+			printf("reached the end of the file\n");
+			break;
+		}
+	
+		// copy the line so analyze_line and it's subfunctions can change it
+		strcpy(line_cpy, in_line);		
+
+		// analyze the line 
+		analyze_line(line_cpy, identifiers, &num_identifiers);
+	
+		// add the line numbers
+		in_line = add_line_number(in_line, line_count);	
+		// write the modified line to the output
+		if(fputs(in_line, outfp) == EOF){
+			fprintf(stderr, "ERROR: could not write line to the outfile\n");
+			exit(1);
+		}
+		line_count++;
+	}
+
+	// write table
+	print_table(outfp, identifiers, num_identifiers);
+	return 0;
+}
+
+void print_table(FILE* outfp, struct identifier_reference* identifiers, int num_identifiers){
+	// prints out a table with the identifiers on it at the end
+	char* to_print;
+	int i = 0; 
+	
+	// alloc space for to_print, 50 should be more than enough
+	if((to_print = (char*) malloc(50*sizeof(char))) == NULL){
+		fprintf(stderr, "ERROR: could not alloc memory for to_print\n");
+		exit(1);
+	}
+
+	// print out the table header
+	sprintf(to_print, "\nIdentifier Reference Table\n\n\tIdentifier\tDefinition-Line\t\tUse Line(s)\n");
+	printf("going to print\n");
+	if(fputs(to_print, outfp) == EOF){
+		fprintf(stderr, "ERROR: could not write lein to the outfile\n");
+		exit(1);
+	}
+	while(i < num_identifiers){
+		printf("in the while loop\n");
+		sprintf(to_print, "\t%-12s%-15d\t", identifiers[i].name, identifiers[i].definition);
+		//struct line_value* tmp = identifiers[i].head->next;	
+		
+
+		// print to the file
+		sprintf(to_print + strlen(to_print), "\n");
+		if(fputs(to_print, outfp) == EOF){
+			fprintf(stderr, "ERROR: could not write line to the outfile\n");
+			exit(1);
+		}
+		i++;
+	}
+
+}

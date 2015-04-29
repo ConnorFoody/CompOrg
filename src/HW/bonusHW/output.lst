@@ -1,0 +1,15 @@
+1		.data
+2	msg:	.asciiz "Hello Worl!3		.text
+4		.globl main
+5	main:
+6	li $v0, 4
+7	la $a0, msg
+8	syscall
+9	li $v0, 10
+10	syscall
+
+Identifier Reference Table
+
+	Identifier	Definition-Line		Use Line(s)
+	msg         0              	
+	main        0              	
