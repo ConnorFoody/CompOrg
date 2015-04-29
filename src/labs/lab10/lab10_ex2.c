@@ -26,8 +26,8 @@ void transpose_old( int n, int blocksize, int *dst, int *src )
 }
 int main( int argc, char **argv ) 
 {
-    int n = 5000,i,j;
-    int blocksize = 100; /* TODO: experiment with block size */
+    int n = 2000,i,j;
+    int blocksize = 1000; /* TODO: experiment with block size */
 
     /* allocate an n*n block of integers for the matrices */
     int *A = (int*)malloc( n*n*sizeof(int) );
