@@ -9,7 +9,8 @@ void transpose( int n, int blocksize, int *dst, int *src )
     /* TODO: add blocking to this basic loop */
     //for( i = 0; i < n; i++ )
     //    for( j = 0; j < n; j++ )
-    for(i = 0; i < (n*n)/blocksize; i++)
+    printf("before the loop\n");
+    for(i = 0; i < ((n*n)/blocksize)+1; i++)
 	for(j = 0; j < blocksize; j++)
 	    if(i*blocksize+j < n*n)
             	dst[((j+i*blocksize)%n)*n + (i*blocksize + j)/n] = src[j+i*blocksize];
@@ -25,21 +26,22 @@ void transpose_old( int n, int blocksize, int *dst, int *src )
 }
 int main( int argc, char **argv ) 
 {
-    int n = 2000,i,j;
+    int n = 5000,i,j;
     int blocksize = 100; /* TODO: experiment with block size */
 
     /* allocate an n*n block of integers for the matrices */
     int *A = (int*)malloc( n*n*sizeof(int) );
     int *B = (int*)malloc( n*n*sizeof(int) );
-
+    if(A == NULL || B == NULL){
+	printf("ERORR: failed to alloc all the memory\n");
+    }
+    printf("alloced\n");
     /* initialize A,B to random integers */
     srand48( time( NULL ) ); /* seed random # generator */
     for( i = 0; i < n*n; i++ ) A[i] = lrand48( );
     for( i = 0; i < n*n; i++ ) B[i] = lrand48( );
-
     /* measure performance */
     struct timeval start, end;
-
     gettimeofday( &start, NULL );
     transpose( n, blocksize, B, A );
     gettimeofday( &end, NULL );
