@@ -10,6 +10,6 @@
 
 Identifier Reference Table
 
-	Identifier	Definition-Line		Use Line(s)
-	msg         0              	
-	main        0              	
+	Identifier	Definition-Line	Use Line(s)
+	msg      	2              	7 
+	main     	5              	

@@ -97,7 +97,7 @@ char* add_line_number(char* line, int number){
 	return to_add;
 }
 
-void check_identifier(char* token, struct identifier_reference* identifiers, int* num_identifiers){
+void check_identifier(char* token, struct identifier_reference* identifiers, int* num_identifiers, int line_number){
 	// checks if a token is an identifier
 	int i = 0; 
 
@@ -115,7 +115,13 @@ void check_identifier(char* token, struct identifier_reference* identifiers, int
 			}
 			struct line_value* head = identifiers[i].head;
 			tmp->next = NULL;
-			tmp->value = 0;
+			tmp->value = line_number;
+
+			// check if we are adding the first line
+			if(head == NULL){
+				identifiers[i].head = tmp;
+				return;
+			}
 
 			// add the new line value onto the end of the list
 			while(head->next != NULL){
@@ -131,7 +137,7 @@ void check_identifier(char* token, struct identifier_reference* identifiers, int
 	
 }
 
-void add_new_identifier(char* identifier, struct identifier_reference* identifiers, int* num_identifiers){
+void add_new_identifier(char* identifier, struct identifier_reference* identifiers, int* num_identifiers, int line_number){
 	int i = 0; 
 	
 	if(strlen(identifier) > 11){
@@ -162,17 +168,8 @@ void add_new_identifier(char* identifier, struct identifier_reference* identifie
 		exit(1);
 	}
 	strcpy(tmp.name, identifier); // need to check for error?
-
-	// add the line number
-	struct line_value* line; 
-	if((line = (struct line_value*) malloc(sizeof(struct line_value))) == NULL){
-		fprintf(stderr, "ERROR: could not alloc memory to add new line struct\n");
-		exit(1);
-	}
-	line->next = NULL; 
-	line->value = 0;
-	tmp.head = line;
-	tmp.definition = 0;
+	tmp.head = NULL;
+	tmp.definition = line_number;
 	
 	// put it in the array
 	identifiers[i] = tmp;
@@ -183,7 +180,7 @@ void add_new_identifier(char* identifier, struct identifier_reference* identifie
 	return;
 }
 
-void analyze_line(char* line, struct identifier_reference* identifiers, int* num_identifiers){
+void analyze_line(char* line, struct identifier_reference* identifiers, int* num_identifiers, int line_number){
 	// analyzes the line
 		
 	// deliminate by commas and spaces	
@@ -215,10 +212,10 @@ void analyze_line(char* line, struct identifier_reference* identifiers, int* num
 
 		if(tkn[strlen(tkn) - 1] == ':'){
 			printf("\t\tfound an identifier definition: %s\n", tkn);
-			add_new_identifier(tkn, identifiers, num_identifiers);
+			add_new_identifier(tkn, identifiers, num_identifiers, line_number);
 		}	
 		else{
-			check_identifier(tkn, identifiers, num_identifiers);
+			check_identifier(tkn, identifiers, num_identifiers, line_number);
 		}
 		//printf("\tlast char is: |%c|\n", tkn[strlen(tkn) -1 ]);
 
@@ -268,7 +265,7 @@ int analyze_file(FILE* infp, FILE* outfp){
 		strcpy(line_cpy, in_line);		
 
 		// analyze the line 
-		analyze_line(line_cpy, identifiers, &num_identifiers);
+		analyze_line(line_cpy, identifiers, &num_identifiers, line_count);
 	
 		// add the line numbers
 		in_line = add_line_number(in_line, line_count);	
@@ -297,7 +294,7 @@ void print_table(FILE* outfp, struct identifier_reference* identifiers, int num_
 	}
 
 	// print out the table header
-	sprintf(to_print, "\nIdentifier Reference Table\n\n\tIdentifier\tDefinition-Line\t\tUse Line(s)\n");
+	sprintf(to_print, "\nIdentifier Reference Table\n\n\tIdentifier\tDefinition-Line\tUse Line(s)\n");
 	printf("going to print\n");
 	if(fputs(to_print, outfp) == EOF){
 		fprintf(stderr, "ERROR: could not write lein to the outfile\n");
@@ -305,9 +302,14 @@ void print_table(FILE* outfp, struct identifier_reference* identifiers, int num_
 	}
 	while(i < num_identifiers){
 		printf("in the while loop\n");
-		sprintf(to_print, "\t%-12s%-15d\t", identifiers[i].name, identifiers[i].definition);
-		//struct line_value* tmp = identifiers[i].head->next;	
-		
+		sprintf(to_print, "\t%-9s\t%-15d\t", identifiers[i].name, identifiers[i].definition);
+
+		// print the use lines
+		struct line_value* tmp = identifiers[i].head;	
+		while(tmp != NULL){
+			sprintf(to_print, "%s%d ",to_print, tmp->value);
+			tmp = tmp->next;
+		}
 
 		// print to the file
 		sprintf(to_print + strlen(to_print), "\n");
