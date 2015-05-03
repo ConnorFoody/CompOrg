@@ -1,16 +1,90 @@
-1		.data
-2	msg:	.asciiz "Hello World\n"
-3		.text
-4		.globl main
-5	main:
-6	li $v0, 4
-7	la $a0, msg
-8	syscall
-9	li $v0, 10
-10	syscall
+1		.data 
+2	hello2_str: .asciiz "hello2 x: "
+3	hello1_str: .asciiz "hello x: "
+4	main_str: .asciiz "main x: "
+5	nl_str: .asciiz "\n"
+6	
+7		.text
+8		.globl main
+9	main:
+10		addi $sp, $sp, -4 # alloc room for jump register, x,a0
+11		li $a0, 1 # store x in register
+12		sw $a0, 0($sp) # store x on the stack
+13	
+14		jal hello # call hello
+15	
+16		la $a0, main_str # print main string
+17		li $v0, 4 # printing string
+18		syscall
+19	
+20		lw $a0, 0 ($sp) # load x off the stack
+21		addi $sp, $sp, 4 # clear stack back up
+22		li $v0, 1 # print a char
+23		syscall
+24	
+25		la $a0, nl_str # print newline string
+26		li $v0, 4 #printing string
+27		syscall
+28	
+29		li $v0, 10 # exit once done
+30		syscall
+31			
+32			
+33	hello:
+34		addi $sp, $sp, -4 # make room for register and arg
+35		sw $31, 0 ($sp) # save the calling function's register to the stack
+36	
+37		
+38		addi $a0, $a0, 1 # increment x by one	
+39		addi $sp, $sp, -4 # make room for x on stack
+40		sw $a0, 0($sp) # save argument onto the stack
+41	
+42		jal hello2 # jump to hello 2
+43	
+44		la $a0, hello1_str # load hello string
+45		li $v0, 4 # printing string
+46		syscall
+47		
+48		lw $a0, 0($sp) # load arg off the stack
+49		addi $sp, $sp, 4 # move back up the stack
+50		li $v0, 1
+51		syscall
+52	
+53		la $a0, nl_str # print new line character
+54		li $v0, 4 # printing string
+55		syscall
+56	
+57		lw $31, 0($sp) # load register out of the stack 
+58		addi $sp, $sp, 4 # move stack back up
+59		jr $31
+60	
+61	hello2:
+62		addi $sp, $sp, -4 # make room for a0
+63		addi $a0, $a0, 1 # x = x + 1
+64		sw $a0, 0($sp) # save x to stack
+65	
+66		la $a0, hello2_str # load hello2 string
+67		li $v0, 4 # printing string
+68		syscall
+69	
+70		lw $a0, 0($sp) # get x off the stack
+71		li $v0, 1 # print character
+72		syscall
+73	
+74		la $a0, nl_str # print new line character
+75		li $v0, 4 # printing string
+76		syscall
+77	
+78		addi $sp, $sp, 4 # clear stack back up
+79		jr $31
 
 Identifier Reference Table
 
 	Identifier	Definition-Line	Use Line(s)
-	msg      	2              	7 
-	main     	5              	
+	hello2_str	2              	66 
+	hello1_str	3              	44 
+	main_str 	4              	16 
+	nl_str   	5              	25 53 74 
+	main     	9              	
+	hello    	33             	14 
+	hello2   	61             	42 

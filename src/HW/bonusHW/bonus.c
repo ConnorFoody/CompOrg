@@ -103,11 +103,11 @@ void check_identifier(char* token, struct identifier_reference* identifiers, int
 	// checks if a token is an identifier
 	int i = 0; 
 
-	printf("\t\tchecking if \"%s\" is an identifier\n", token);
+	//printf("\t\tchecking if \"%s\" is an identifier\n", token);
 	while(i != *num_identifiers){
 		if(strcmp(identifiers[i].name, token) == 0){
 			// found an identifier already in the list, add it
-			printf("\t\ttoken \"%s\" is an identifier, updating table\n", token);
+			//printf("\t\ttoken \"%s\" is an identifier, updating table\n", token);
 
 			// alloc new line_value
 			struct line_value* tmp;
@@ -162,7 +162,7 @@ void add_new_identifier(char* identifier, struct identifier_reference* identifie
 		i++;
 	}
 
-	printf("\t\tidentifier is not already in the list, adding it in: %s\n", identifier);
+	//printf("\t\tidentifier is not already in the list, adding it in: %s\n", identifier);
 	// build and add new identifier
 	struct identifier_reference tmp; 
 	if((tmp.name = (char*) malloc(11 * sizeof(char))) == NULL){ // give the right ammount of space
@@ -182,7 +182,7 @@ void add_new_identifier(char* identifier, struct identifier_reference* identifie
 	return;
 }
 
-void analyze_line(char* line, struct identifier_reference* identifiers, int* num_identifiers, int line_number){
+void analyze_line(char* line, struct identifier_reference* identifiers, int* num_identifiers, int line_number, int scan_definition){
 	// analyzes the line
 		
 	// deliminate by commas and spaces	
@@ -212,11 +212,11 @@ void analyze_line(char* line, struct identifier_reference* identifiers, int* num
 			tkn[strlen(tkn) - 1] = '\0';
 		}
 
-		if(tkn[strlen(tkn) - 1] == ':'){
+		if(tkn[strlen(tkn) - 1] == ':' && scan_definition){
 			printf("\t\tfound an identifier definition: %s\n", tkn);
 			add_new_identifier(tkn, identifiers, num_identifiers, line_number);
 		}	
-		else{
+		else if(!scan_definition){
 			check_identifier(tkn, identifiers, num_identifiers, line_number);
 		}
 		//printf("\tlast char is: |%c|\n", tkn[strlen(tkn) -1 ]);
@@ -255,7 +255,8 @@ int analyze_file(FILE* infp, FILE* outfp){
 		exit(1);
 	}
 
-	printf("about to enter the loop\n");
+	// jumps can be used before the scanning reaches the definition
+	// scan first for definition then scan for use lines
 	while(1){
 	
 		// read the next line
@@ -276,7 +277,9 @@ int analyze_file(FILE* infp, FILE* outfp){
 		}
 
 		// analyze the line 
-		analyze_line(line_cpy, identifiers, &num_identifiers, line_count);
+		analyze_line(line_cpy, identifiers, &num_identifiers, line_count, 1);
+		strcpy(line_cpy, in_line);
+		//analyze_line(line_cpy, identifiers, &num_identifiers, line_count, 0);
 
 		// add the line numbers
 		tmp = add_line_number(in_line, line_count);	
@@ -286,9 +289,29 @@ int analyze_file(FILE* infp, FILE* outfp){
 			fprintf(stderr, "ERROR: could not write line to the outfile\n");
 			exit(1);
 		}
-
 		// take care of mem
 		free(tmp);
+		line_count++;
+	}
+
+	fseek(infp, 0L, SEEK_SET);
+	line_count = 1; 
+
+	while(1){
+		
+		if(fgets(in_line, 80, infp) == NULL){
+			printf("at end of file while scanning for use lines\n");
+			break;
+		}
+
+		if(strlen(in_line) > 80){
+			printf("WARNING: input line is longer than we were expecting\n");
+			exit(1);
+		}
+		
+		// scan the line for use lines
+		analyze_line(in_line, identifiers, &num_identifiers, line_count, 0);
+
 		line_count++;
 	}
 
