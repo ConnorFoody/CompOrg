@@ -1,4 +1,6 @@
 /**
+ *
+ * printf("AFTER ANALYZE: %s\n", in_line);
  * author: Connor Foody 
  * 
  * Bonus homework assignment for CompOrg
@@ -84,7 +86,7 @@ char* add_line_number(char* line, int number){
 	char* to_add; 				// line to add	
 
 	// alloc the memory 
-	if((to_add = (char*) malloc(4 * sizeof(char))) == NULL){
+	if((to_add = (char*) malloc((5 + strlen(line))* sizeof(char))) == NULL){
 		fprintf(stderr, "ERROR: could not alloc enough memory for line string\n");
 		exit(1);
 	}
@@ -224,6 +226,7 @@ void analyze_line(char* line, struct identifier_reference* identifiers, int* num
 }
 
 void print_table(FILE* outfp, struct identifier_reference* identifiers, int num_identifiers);
+void free_identifiers(struct identifier_reference* identifiers, int num_identifiers);
 
 int analyze_file(FILE* infp, FILE* outfp){
 	// reads the input file, puts line numbers on the front then moves on
@@ -231,6 +234,7 @@ int analyze_file(FILE* infp, FILE* outfp){
 	int line_count = 1;		// track line numbers
 	char* in_line; 				// line buffer
 	char* line_cpy; 			// so that the line can be changed
+	char* tmp; 						// holding returned pointers
 
 	struct identifier_reference* identifiers; // array of used identifiers
 	int num_identifiers = 0; // keeps track of how many identifiers we have found
@@ -264,21 +268,38 @@ int analyze_file(FILE* infp, FILE* outfp){
 		// copy the line so analyze_line and it's subfunctions can change it
 		strcpy(line_cpy, in_line);		
 
+		printf("INLINE: %s\n", in_line);
+
+		if(strlen(in_line) > 80){
+			printf("ERROR: inline is too long\n");
+			exit(1);
+		}
+
 		// analyze the line 
 		analyze_line(line_cpy, identifiers, &num_identifiers, line_count);
-	
+
 		// add the line numbers
-		in_line = add_line_number(in_line, line_count);	
+		tmp = add_line_number(in_line, line_count);	
+		printf("OUTLINE: %s\n", in_line);
 		// write the modified line to the output
-		if(fputs(in_line, outfp) == EOF){
+		if(fputs(tmp, outfp) == EOF){
 			fprintf(stderr, "ERROR: could not write line to the outfile\n");
 			exit(1);
 		}
+
+		// take care of mem
+		free(tmp);
 		line_count++;
 	}
 
 	// write table
+	printf("Going to write file\n");
 	print_table(outfp, identifiers, num_identifiers);
+
+	// clean up the memory
+	free(in_line);
+	free_identifiers(identifiers, num_identifiers);
+	free(line_cpy);
 	return 0;
 }
 
@@ -288,7 +309,7 @@ void print_table(FILE* outfp, struct identifier_reference* identifiers, int num_
 	int i = 0; 
 	
 	// alloc space for to_print, 50 should be more than enough
-	if((to_print = (char*) malloc(50*sizeof(char))) == NULL){
+	if((to_print = (char*) malloc(500*sizeof(char))) == NULL){
 		fprintf(stderr, "ERROR: could not alloc memory for to_print\n");
 		exit(1);
 	}
@@ -319,5 +340,30 @@ void print_table(FILE* outfp, struct identifier_reference* identifiers, int num_
 		}
 		i++;
 	}
+	
+	// make sure to free memory
+	free(to_print);
 
+}
+
+// helper function for freeing line_value LL in identifier_reference 
+void free_linked_list(struct line_value* node){
+	if(node == NULL){ return; }
+	free_linked_list(node->next);
+	free(node);
+}
+
+// helper function to free the identifier_reference array b/c its a little tricky
+void free_identifiers(struct identifier_reference* identifiers, int num_identifiers){
+	int i; 			// loop counter
+
+	for(i = 0; i < num_identifiers; i++){
+		// free the string for the name
+		free(identifiers[i].name);
+
+		// free the linked list
+		free_linked_list(identifiers[i].head);
+	}
+	// free the array it's self
+	free(identifiers);
 }
