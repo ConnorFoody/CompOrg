@@ -84,7 +84,7 @@ Identifier Reference Table
 	hello2_str	2              	66 
 	hello1_str	3              	44 
 	main_str 	4              	16 
-	nl_str   	5              	25 53 74 
+	nl_str   	5              	25, 53, 74 
 	main     	9              	
 	hello    	33             	14 
 	hello2   	61             	42 

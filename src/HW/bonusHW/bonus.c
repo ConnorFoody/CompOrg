@@ -82,9 +82,14 @@ int main(int argc, char** argv){
 	return 0;	
 }
 
+int find_num_digits(int number){
+	int tmp = 0; 			// holder
+	
+}
 char* add_line_number(char* line, int number){
 	char* to_add; 				// line to add	
 
+	int size_of_int = floor(log10((double)abs(number))) + 1;
 	// alloc the memory 
 	if((to_add = (char*) malloc((5 + strlen(line))* sizeof(char))) == NULL){
 		fprintf(stderr, "ERROR: could not alloc enough memory for line string\n");
@@ -239,12 +244,12 @@ int analyze_file(FILE* infp, FILE* outfp){
 	struct identifier_reference* identifiers; // array of used identifiers
 	int num_identifiers = 0; // keeps track of how many identifiers we have found
 
-	// alloc with size 85 to fit line numbers
-	if((in_line = (char*) malloc(85 * sizeof(char))) == NULL){ // alloc the line buffer
+	// alloc with size 82 to leave a little extra breathing room
+	if((in_line = (char*) malloc(82 * sizeof(char))) == NULL){ // alloc the line buffer
 		fprintf(stderr, "ERROR: could not alloc enough memory for in_line\n");
 		exit(1);
 	}
-	if((line_cpy = (char*) malloc(85 * sizeof(char))) == NULL){ // alloc the line buffer
+	if((line_cpy = (char*) malloc(82 * sizeof(char))) == NULL){ // alloc the line buffer
 		fprintf(stderr, "ERROR: could not alloc enough memory for line cpy\n");
 		exit(1);
 	}
@@ -276,34 +281,37 @@ int analyze_file(FILE* infp, FILE* outfp){
 			exit(1);
 		}
 
-		// analyze the line 
+		// scan the line for definitions 
 		analyze_line(line_cpy, identifiers, &num_identifiers, line_count, 1);
-		strcpy(line_cpy, in_line);
-		//analyze_line(line_cpy, identifiers, &num_identifiers, line_count, 0);
 
 		// add the line numbers
 		tmp = add_line_number(in_line, line_count);	
-		printf("OUTLINE: %s\n", in_line);
+
 		// write the modified line to the output
 		if(fputs(tmp, outfp) == EOF){
 			fprintf(stderr, "ERROR: could not write line to the outfile\n");
 			exit(1);
 		}
+
 		// take care of mem
 		free(tmp);
 		line_count++;
 	}
 
+	// move the filepointer and line count back to the start
 	fseek(infp, 0L, SEEK_SET);
 	line_count = 1; 
 
+	// loop through a second time to look for the line definitions
 	while(1){
-		
+
+		// read in the input line		
 		if(fgets(in_line, 80, infp) == NULL){
 			printf("at end of file while scanning for use lines\n");
 			break;
 		}
 
+		// check that the input line is the right size
 		if(strlen(in_line) > 80){
 			printf("WARNING: input line is longer than we were expecting\n");
 			exit(1);
@@ -311,7 +319,8 @@ int analyze_file(FILE* infp, FILE* outfp){
 		
 		// scan the line for use lines
 		analyze_line(in_line, identifiers, &num_identifiers, line_count, 0);
-
+	
+		// move up the linecount
 		line_count++;
 	}
 
@@ -332,6 +341,7 @@ void print_table(FILE* outfp, struct identifier_reference* identifiers, int num_
 	int i = 0; 
 	
 	// alloc space for to_print, 50 should be more than enough
+	// TODO: find how long this actually needs to be
 	if((to_print = (char*) malloc(500*sizeof(char))) == NULL){
 		fprintf(stderr, "ERROR: could not alloc memory for to_print\n");
 		exit(1);
@@ -339,23 +349,32 @@ void print_table(FILE* outfp, struct identifier_reference* identifiers, int num_
 
 	// print out the table header
 	sprintf(to_print, "\nIdentifier Reference Table\n\n\tIdentifier\tDefinition-Line\tUse Line(s)\n");
-	printf("going to print\n");
 	if(fputs(to_print, outfp) == EOF){
 		fprintf(stderr, "ERROR: could not write lein to the outfile\n");
 		exit(1);
 	}
+
+	// print all the identifiers and their data
 	while(i < num_identifiers){
-		printf("in the while loop\n");
+
+		// name, definition
 		sprintf(to_print, "\t%-9s\t%-15d\t", identifiers[i].name, identifiers[i].definition);
 
-		// print the use lines
+		// append on use lines
 		struct line_value* tmp = identifiers[i].head;	
 		while(tmp != NULL){
-			sprintf(to_print, "%s%d ",to_print, tmp->value);
+			sprintf(to_print, "%s%d",to_print, tmp->value);
+
+			// take care of multiple use line 
+			if(tmp->next != NULL){
+				sprintf(to_print, "%s\t", to_print);
+			}
+			
+			// move the pointer along
 			tmp = tmp->next;
 		}
 
-		// print to the file
+		// print this row of the table to the file
 		sprintf(to_print + strlen(to_print), "\n");
 		if(fputs(to_print, outfp) == EOF){
 			fprintf(stderr, "ERROR: could not write line to the outfile\n");
