@@ -1,41 +1,46 @@
-/**
- *
- * printf("AFTER ANALYZE: %s\n", in_line);
- * author: Connor Foody 
- * 
+/*
  * Bonus homework assignment for CompOrg
+ * Author: Connor Foody 
  * 
- * Input is an s file, output is a lst file
+ * Inputs: input-file output-file
+ * 			- input-file is a valid mips assembly file
+ * 			- output file is any file type
  *
- * Output is same as input, but with line nums appended
- * Output table of identifiers with definition line, and
- * use lines
+ * Outputs: input-file with line numbers added, and
+ * 					table of identifier definitions and use
+ * 					lines written to output file 
+ *
+ * Program finds the identifiers, their definitions
+ * and the use lines then writes them to the output
+ * file. Also puts line numbers infront of the text 
+ * from the input file
+ *
+ * Lab Section 1 
+ *
  */
-
-// struct to hold identifier reference table data
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+// LL node for identifier use lines
 struct line_value{
-	int value;
-	struct line_value* next;
-};
+	int value; // use line number
+	struct line_value* next; // next node in the list (null if at end)
+}; // end line_value
 
+// identifier definition and use line data
 struct identifier_reference{
-	char* name;
-	int definition; 
-	struct line_value* head;
-};
+	char* name; // identifier name
+	int definition; // line number of identifier definition 
+	struct line_value* head; // head of line_value linked-list
+}; // end identifier_reference
 
 // prototype for function called by main
 void analyze_file(FILE* infp, FILE* outfp);
 
 // main program function
 int main(int argc, char** argv){
-	printf("hello world\n");
-
 
 	char* infile; // store the name of the input file
 	char* outfile; // store the name of the ouput file
@@ -109,12 +114,14 @@ char* add_line_number(char* line, int number){
 	int size_of_number = find_num_digits(number) + 1;
 	
 	// size of the string is the legnth of the input string + the length of the number string + breathing room	
+	// to_add is returned to analyze_file where it is used then freed
 	if((to_add = (char*) malloc((2 + size_of_number + strlen(line))* sizeof(char))) == NULL){
 		fprintf(stderr, "ERROR: could not alloc enough memory for line string\n");
 		exit(1);
 	}
 
 	// print the line numbers in then concat the old string on
+	// line and to_add point to different memory locations
 	sprintf(to_add, "%d\t", number);
 	strcat(to_add, line);
 
@@ -182,14 +189,16 @@ void add_new_identifier(char* identifier, struct identifier_reference* identifie
 	int i = 0; 
 	
 	if(strlen(identifier) > 11){
-		printf("WARNING: tried to add an identifier that was too long\n");	
-		return;
+		fprintf(stderr, "WARNING: tried to add an identifier that was too long\n");	
+		exit(1);
 	}
 
 	// token has ':' at end, replace with null character 
 	if(identifier[strlen(identifier) - 1] != ':'){
 		printf("\tWARNING: expected token to end in ':'\n");
+		return;
 	}
+
 	// chop the ':' off the identifier with a null termination
 	identifier[strlen(identifier) - 1] = '\0';
 	
@@ -198,7 +207,7 @@ void add_new_identifier(char* identifier, struct identifier_reference* identifie
 		if(strcmp(identifiers[i].name, identifier) == 0){
 			// found an identifier already in the list
 			// should not happen b/c it would mean a redefinition
-			printf("\t\tWARNING: identifier found in table\n");
+			fprintf(stderr, "ERROR: redefinition of identifier\n");
 			return; 
 		}
 		i++;
@@ -227,7 +236,7 @@ void add_new_identifier(char* identifier, struct identifier_reference* identifie
 // inputs: 
 // 	line - string, the line read from the file
 // 	identifiers - identifier_reference array, the identifier data
-// 	num_identifiers - int, how many identifiers have been found so far
+// 	num_identifiers - int, how many identifiers have been found so far, pass by reference so can update when new identifier found
 // 	line_number - int, which line was read from the input file
 // 	scan_definition - bool, 1 = looking for definitions only, 0 = looking for use lines only
 //
@@ -240,11 +249,11 @@ void analyze_line(char* line, struct identifier_reference* identifiers, int* num
 
 	// check if the line is empty or is a comment line
 	if(tkn == NULL || tkn[0] == '\n' || tkn[0] == '#'){
-		printf("\tline is empty or comment line\n");
+		// if the line is empty or we reached a comment, we are done with this line
 		return;
 	}
 
-	// loop through all the tokens
+	// loop through line until there are no more tokens
 	while(tkn != NULL){
 
 		// if line has no more useful info, return	
@@ -256,16 +265,13 @@ void analyze_line(char* line, struct identifier_reference* identifiers, int* num
 			continue;
 		}
 
-		printf("\tlooking at token: %s\n", tkn);	
 		// null terminate the token
 		if(tkn[strlen(tkn) - 1] == '\n'){
-			printf("\tcaught new line, going to fix\n");
 			tkn[strlen(tkn) - 1] = '\0';
 		}
 
 		if(tkn[strlen(tkn) - 1] == ':' && scan_definition){
 			// if we found a definition and we are looking for definitions
-			printf("\t\tfound an identifier definition: %s\n", tkn);
 			add_new_identifier(tkn, identifiers, num_identifiers, line_number);
 		}	
 		else if(!scan_definition){
@@ -290,12 +296,11 @@ void free_identifiers(struct identifier_reference* identifiers, int num_identifi
 // outputs:
 // 	none
 void analyze_file(FILE* infp, FILE* outfp){
-	// reads the input file, puts line numbers on the front then moves on
 
 	int line_count = 1;		// track line numbers
 	char* in_line; 				// line buffer
 	char* line_cpy; 			// so that the line can be changed
-	char* tmp; 						// holding returned pointers
+	char* tmp; 						// holds pointers so in_line doesn't get all messed up
 
 	struct identifier_reference* identifiers; // array of used identifiers
 	int num_identifiers = 0; // keeps track of how many identifiers we have found
@@ -305,7 +310,7 @@ void analyze_file(FILE* infp, FILE* outfp){
 		fprintf(stderr, "ERROR: could not alloc enough memory for in_line\n");
 		exit(1);
 	}
-	if((line_cpy = (char*) malloc(82 * sizeof(char))) == NULL){ // alloc the line buffer
+	if((line_cpy = (char*) malloc(82 * sizeof(char))) == NULL){ // alloc the line copy
 		fprintf(stderr, "ERROR: could not alloc enough memory for line cpy\n");
 		exit(1);
 	}
@@ -316,14 +321,13 @@ void analyze_file(FILE* infp, FILE* outfp){
 		exit(1);
 	}
 
-	// jumps can be used before the scanning reaches the definition
-	// scan first for definition then scan for use lines
-	while(1){
+	// jumps can be referenced before they are defined
+	// scan file twice, first for definitions then for use lines
+	while(1){ // first scan
 	
 		// read the next line
 		if(fgets(in_line, 80, infp) == NULL){
-			// at end of file
-			printf("reached the end of the file\n");
+			// at end of file, end the loop
 			break;
 		}
 	
@@ -331,7 +335,7 @@ void analyze_file(FILE* infp, FILE* outfp){
 		strcpy(line_cpy, in_line);		
 
 		if(strlen(in_line) > 80){
-			printf("ERROR: inline is too long\n");
+			fprintf(stderr, "ERROR: the input line is too long\n");
 			exit(1);
 		}
 
@@ -339,6 +343,7 @@ void analyze_file(FILE* infp, FILE* outfp){
 		analyze_line(line_cpy, identifiers, &num_identifiers, line_count, 1);
 
 		// add the line numbers
+		// tmp is alloc'd in add_line_number and points to different mem than in_line
 		tmp = add_line_number(in_line, line_count);	
 
 		// write the modified line to the output
@@ -348,7 +353,7 @@ void analyze_file(FILE* infp, FILE* outfp){
 		}
 
 		// take care of mem
-		free(tmp);
+		free(tmp); // free memory alloc'd in add_line_number
 		line_count++;
 	}
 
@@ -357,7 +362,7 @@ void analyze_file(FILE* infp, FILE* outfp){
 	line_count = 1; 
 
 	// loop through a second time to look for the line definitions
-	while(1){
+	while(1){ // second scan
 
 		// read in the input line		
 		if(fgets(in_line, 80, infp) == NULL){
@@ -378,7 +383,7 @@ void analyze_file(FILE* infp, FILE* outfp){
 		line_count++;
 	}
 
-	// write table
+	// write identifier table to the output file
 	print_table(outfp, identifiers, num_identifiers);
 
 	// clean up the memory
